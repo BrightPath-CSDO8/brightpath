@@ -1,0 +1,161 @@
+{
+  "openapi": "3.1.1",
+  "info": {
+    "title": "LearnLaunch",
+    "version": "1.0",
+    "contact": {
+        "name": "CSDO8"
+    },
+    "description": "This is the OpenAPI specification for LearnLaunch application."
+  },
+  "servers": [{ "url": "http://127.0.0.1:5000" }],
+  "tags": [
+    {
+        "name": "Courses",
+        "description": "Operations related to courses"
+    },
+    {
+        "name": "Students",
+        "description": "Operations related to students"
+    },
+    {
+        "name": "Instructors",
+        "description": "Operations related to instructors"
+    }
+  ],
+  "components": {
+    "schemas": {
+      "Course": {
+        "type": "object",
+        "properties": {
+          "course_code": {
+            "type": "integer"
+          },
+          "name": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          }
+        },
+        "required": ["course_code", "name"]
+      },
+      "Student": {
+        "type": "object",
+        "properties": {
+          "student_id": {
+            "type": "integer"
+          },
+          "name": {
+            "type": "string"
+          }
+        },
+        "required": ["student_id", "name"]
+      },
+      "Instructor": {
+        "type": "object",
+        "properties": {
+          "instructor_id": {
+            "type": "integer"
+          },
+          "name": {
+            "type": "string"
+          }
+        },
+        "required": ["instructor_id", "name"]
+      }
+    }
+  },
+  "paths": {
+    "/api/courses": {
+      "get": {
+        "description": "Retrieve all courses",
+        "parameters": [],
+        "tags": ["Courses"],
+        "operationId": "getAllCourses",
+        "responses": {
+          "200": {
+            "description": "Retrieve all courses",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "courses ": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/Course"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Course not found."
+          },
+          "500": {
+            "description": "Server connection error."
+          }
+        }
+      }
+    },
+    "/api/students": {
+      "get": {
+        "description": "Retrieve all students",
+        "parameters": [],
+        "tags": ["Students"],
+        "operationId": "getAllStudents",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "students": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/Student"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/instructors": {
+      "get": {
+        "description": "Retrieve all instructors",
+        "parameters": [],
+        "tags": ["Instructors"],
+        "operationId": "getAllInstructors",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "instructors": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/Instructor"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
