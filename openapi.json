@@ -77,19 +77,6 @@
         },
         "required": ["instructor_id", "name"]
       }
-    },
-    "examples": {
-      "StandardCoursesObj": {
-        "value": {
-          "id": 1,
-          "course_id": "CSR101",
-          "title": "Fundamentals of Python",
-          "description": "Learn Basics of Python",
-          "start_date": "24/01/25",
-          "end_date": "25/02/25",
-          "class_capacity": 20
-        }
-      }
     }
   },
   "paths": {
@@ -196,7 +183,7 @@
       "get": {
         "operationId": "getOneCourse",
         "tags": ["Course"],
-        "description": "Retrieve individual course by its Course ID",
+        "description": "Retrieve individual course by the Course ID",
         "parameters": [
           {
             "name": "course_id",
@@ -210,7 +197,37 @@
         ],
         "responses": {
           "200": {
-            "description": "OK"
+            "description": "Retrieve individual course by the Course Id.",
+            "content": {
+              "application/json": {
+                "example": {
+                  "id": 1,
+                  "course_id": "CSR101",
+                  "title": "Fundamentals of Python",
+                  "description": "Learn Basics of Python",
+                  "start_date": "24/01/25",
+                  "end_date": "25/02/25",
+                  "class_capacity": 20
+                },
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "courses ": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/Course"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such course."
+          },
+          "500": {
+            "description": "Error fetching course."
           }
         }
       }
