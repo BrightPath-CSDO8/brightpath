@@ -4,27 +4,27 @@
     "title": "LearnLaunch",
     "version": "1.0",
     "contact": {
-        "name": "CSDO8"
+      "name": "CSDO8"
     },
     "description": "This is the OpenAPI specification for LearnLaunch application."
   },
   "servers": [{ "url": "http://127.0.0.1:5000" }],
   "tags": [
     {
-        "name": "Courses",
-        "description": "Operations related to courses"
+      "name": "Courses",
+      "description": "Operations related to courses"
     },
     {
       "name": "Course",
       "description": "Get individual course"
     },
     {
-        "name": "Students",
-        "description": "Operations related to students"
+      "name": "Students",
+      "description": "Operations related to students"
     },
     {
-        "name": "Instructors",
-        "description": "Operations related to instructors"
+      "name": "Instructors",
+      "description": "Operations related to instructors"
     }
   ],
   "components": {
@@ -40,15 +40,15 @@
           },
           "description": {
             "type": "string"
-          }, 
+          },
           "start_date": {
-            "type":"string"
+            "type": "string"
           },
-          "end_date":{
-            "type":"string"
+          "end_date": {
+            "type": "string"
           },
-          "class_capacity":{
-            "type":"integer"
+          "class_capacity": {
+            "type": "integer"
           }
         },
         "required": ["course_id", "title"]
@@ -77,6 +77,19 @@
         },
         "required": ["instructor_id", "name"]
       }
+    },
+    "examples": {
+      "StandardCoursesObj": {
+        "value": {
+          "id": 1,
+          "course_id": "CSR101",
+          "title": "Fundamentals of Python",
+          "description": "Learn Basics of Python",
+          "start_date": "24/01/25",
+          "end_date": "25/02/25",
+          "class_capacity": 20
+        }
+      }
     }
   },
   "paths": {
@@ -91,6 +104,15 @@
             "description": "Retrieve all courses",
             "content": {
               "application/json": {
+                "example": {
+                  "id": 1,
+                  "course_id": "CSR101",
+                  "title": "Fundamentals of Python",
+                  "description": "Learn Basics of Python",
+                  "start_date": "24/01/25",
+                  "end_date": "25/02/25",
+                  "class_capacity": 20
+                },
                 "schema": {
                   "type": "object",
                   "properties": {
@@ -175,7 +197,8 @@
         "operationId": "getOneCourse",
         "tags": ["Course"],
         "description": "Retrieve individual course by its Course ID",
-        "parameters": [{
+        "parameters": [
+          {
             "name": "course_id",
             "in": "path",
             "description": "ID of course to return",
@@ -183,7 +206,8 @@
             "schema": {
               "type": "string"
             }
-          }],
+          }
+        ],
         "responses": {
           "200": {
             "description": "OK"
