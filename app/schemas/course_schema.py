@@ -12,6 +12,17 @@ class CourseStatus(str, Enum):
     PENDING = "PENDING"
 
 
+class CoursePostRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    course_name: str
+    course_fee: Decimal
+    description: str
+    schedule: str
+    start_date: date
+    end_date: date
+    capacity: int
+
+
 # fields are None because its a PATCH schema
 # None default means this field is optional in a PATCH
 class CoursePatchRequest(BaseModel):
