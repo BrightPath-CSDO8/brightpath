@@ -34,51 +34,67 @@
         "properties": {
           "error":{
             "type":"string",
-            "example":"Bad request."
+            "example":"VALIDATION_ERROR"
           },
           "message":{
             "type":"string",
-            "example":"course_name field is missing"
+            "example":"Invalid course date"
           },
-          "field":{
-            "type":"string",
-            "example":"course_id_bus"
+          "details":{
+            "type":"object",
+            "additionalProperties": {
+              "type":"string"
+            },
+            "example":{
+              "end_date":"End date must be on or after start date."
+            }
           }
-        }
+        },
+        "required": ["error", "message"]
       },
       "CourseResponse": {
         "type": "object",
         "properties": {
           "course_id_bus": {
-            "type": "string"
+            "type": "string",
+            "pattern": "^CSR-[0-9]{4}$",
+            "example":"CSR-1010"
           },
           "course_name": {
-            "type": "string"
+            "type": "string",
+            "example": "Introduction to Python"
           },
           "course_fee": {
             "type": "number",
-            "format": "double"
+            "format": "float",
+            "example": 250.55
           },
           "description": {
-            "type": "string"
+            "type": "string",
+            "example":"Learn the basics of Python"
           },
           "schedule": {
-            "type": "string"
+            "type": "string",
+            "example":"Monday 9am - 11am"
           },
           "start_date": {
             "type": "string",
-            "format": "date"
+            "format": "date",
+            "example":"2026-09-01"
           },
           "end_date": {
             "type": "string",
-            "format": "date"
+            "format": "date",
+            "example":"2026-12-01"
           },
           "status": {
             "type": "string",
-            "enum": ["OPEN", "CLOSED","INACTIVE","PENDING"]
+            "enum": ["OPEN", "CLOSED","INACTIVE","PENDING"],
+            "example":"PENDING"
           },
           "capacity": {
-            "type": "integer"
+            "type": "integer",
+            "example":30
           }
         },
         "required": [
@@ -93,29 +109,78 @@
           "status"
         ]
       },
-      "CoursePatchRequest": {
-        "type": "object",
-        "properties": {
+      "CourseCreate":{
+        "type":"object",
+       "properties": {
           "course_name": {
             "type": "string"
           },
           "course_fee": {
             "type": "number",
-            "format": "double"
+            "format": "float",
+            "example":250.85
           },
           "description": {
             "type": "string"
+          },
+          "schedule": {
+            "type": "string",
+            "example":"Monday and Wednesday 9am - 11am"
+          },
+          "start_date": {
+            "type": "string",
+            "format": "date",
+            "example": "2026-01-20"
+          },
+          "end_date": {
+            "type": "string",
+            "format": "date",
+            "example": "2026-01-20"
+          },
+          "capacity": {
+            "type": "integer",
+            "minimum": 1,
+            "example":50 
+          }
+        },
+        "required": [
+          "course_name",
+          "course_fee",
+          "description",
+          "schedule",
+          "start_date",
+          "end_date",
+          "capacity"
+        ]
+      },
+      "CoursePatchRequest": {
+        "type": "object",
+        "properties": {
+          "course_name": {
+            "type": "string",
+            "example":"Introduction to Python 2"
+          },
+          "course_fee": {
+            "type": "number",
+            "format": "float",
+            "example":250.55
+          },
+          "description": {
+            "type": "string",
+            "example": "Advanced topics of Python"
           },
           "schedule": {
             "type": "string"
           },
           "start_date": {
             "type": "string",
-            "format": "date"
+            "format": "date",
+            "example":"2026-09-01"
           },
           "end_date": {
             "type": "string",
-            "format": "date"
+            "format": "date",
+            "example":"2026-10-01"
           },
           "status": {
             "type": "string",
@@ -165,14 +230,13 @@
             "content": {
               "application/json": {
                 "example": {
-                  "id": 1,
                   "course_id_bus": "CSR-1010",
                   "course_name": "Fundamentals of Python",
-                  "course_fee": "180.80",
+                  "course_fee": 180.80,
                   "description": "Learn Basics of Python",
                   "schedule":"Monday, 9am - 11am",
-                  "start_date": "24/01/25",
-                  "end_date": "25/02/25",
+                  "start_date": "2026-09-01",
+                  "end_date": "2026-10-01",
                   "status": "OPEN",
                   "capacity": 20
                 },
@@ -202,6 +266,214 @@
           },
           "500": {
             "description": "Server connection error.",
+            "content": {
+              "application/json":{
+                "schema":{
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "description": "Creates a new course with a system-generated business ID.",
+        "operationId": "createCourse",
+        "tags": ["Course"],
+        "parameters": [],
+        "requestBody":{
+          "required": true,
+          "content": {
+            "application/json":{
+              "example": {
+                  "course_name": "Fundamentals of Python",
+                  "course_fee": 180.80,
+                  "description": "Learn Basics of Python",
+                  "schedule":"Monday, 9am - 11am",
+                  "start_date": "2026-09-01",
+                  "end_date": "2026-10-01",
+                  "capacity": 20
+                },
+              "schema":{
+                "type":"object",
+                "properties": {
+                  "course":{
+                    "type":"object",
+                    "items":{
+                      "$ref": "#/components/schemas/CourseCreate"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Course created successfully",
+            "content": {
+              "application/json":{
+                "schema": {
+                  "$ref": "#/components/schemas/CourseResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request.",
+            "content": {
+              "application/json":{
+                "schema":{
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/courses/{course_id_bus}": {
+      "get": {
+        "operationId": "getOneCourse",
+        "tags": ["Course"],
+        "description": "Retrieve individual course by the Course ID",
+        "parameters": [
+          {
+            "name": "course_id_bus",
+            "in": "path",
+            "description": "ID of course to return",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Retrieve individual course by the Course Id.",
+            "content": {
+              "application/json": {
+                 "example": {
+                  "id": 1,
+                  "course_id_bus": "CSR-1010",
+                  "course_name": "Fundamentals of Python",
+                  "course_fee": 180.80,
+                  "description": "Learn Basics of Python",
+                  "schedule":"Monday, 9am - 11am",
+                  "start_date": "2026-09-01",
+                  "end_date": "2026-10-01",
+                  "status": "OPEN",
+                  "capacity": 20
+                },
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "courses ": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/CourseResponse"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such course."
+          },
+          "500": {
+            "description": "Error fetching course."
+          }
+        }
+      },
+      "patch": {
+        "description": "Update existing course information",
+        "tags": ["Course"],
+        "operationId": "updateCourse",
+        "parameters": [
+          {
+            "name": "course_id_bus",
+            "in": "path",
+            "description": "ID of course",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "description": "",
+          "required": true,
+          "content": {
+            "application/json": {
+              "example": {
+                  "course_name": "Fundamentals of Python",
+                  "course_fee": 180.80,
+                  "description": "Learn Basics of Python",
+                  "schedule":"Monday, 9am - 11am",
+                  "start_date": "2026-09-01",
+                  "end_date": "2026-10-01",
+                  "status": "OPEN",
+                  "capacity": 20
+                },
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "course": {
+                    "type": "object",
+                    "items": {
+                      "$ref": "#/components/schemas/CoursePatchRequest"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Course updated successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CourseResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad request.",
+             "content": {
+              "application/json":{
+                "schema":{
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorised request.",
+             "content": {
+              "application/json":{
+                "schema":{
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden request.",
+             "content": {
+              "application/json":{
+                "schema":{
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Resource not found.",
             "content": {
               "application/json":{
                 "schema":{
@@ -268,160 +540,7 @@
           }
         }
       }
-    },
-    "/api/v1/courses/{course_id_bus}": {
-      "get": {
-        "operationId": "getOneCourse",
-        "tags": ["Course"],
-        "description": "Retrieve individual course by the Course ID",
-        "parameters": [
-          {
-            "name": "course_id_bus",
-            "in": "path",
-            "description": "ID of course to return",
-            "required": true,
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Retrieve individual course by the Course Id.",
-            "content": {
-              "application/json": {
-                 "example": {
-                  "id": 1,
-                  "course_id_bus": "CSR-1010",
-                  "course_name": "Fundamentals of Python",
-                  "course_fee": "180.80",
-                  "description": "Learn Basics of Python",
-                  "schedule":"Monday, 9am - 11am",
-                  "start_date": "24/01/25",
-                  "end_date": "25/02/25",
-                  "status": "OPEN",
-                  "capacity": 20
-                },
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "courses ": {
-                      "type": "array",
-                      "items": {
-                        "$ref": "#/components/schemas/CourseResponse"
-                      }
-                    }
-                  }
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "No such course."
-          },
-          "500": {
-            "description": "Error fetching course."
-          }
-        }
-      },
-      "patch": {
-        "description": "Update existing course information",
-        "tags": ["Course"],
-        "operationId": "updateCourse",
-        "parameters": [
-          {
-            "name": "course_id_bus",
-            "in": "path",
-            "description": "ID of course",
-            "required": true,
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "requestBody": {
-          "description": "",
-          "required": true,
-          "content": {
-            "application/json": {
-              "example": {
-                  "course_id_bus": "CSR-1010",
-                  "course_name": "Fundamentals of Python",
-                  "course_fee": "180.80",
-                  "description": "Learn Basics of Python",
-                  "schedule":"Monday, 9am - 11am",
-                  "start_date": "24/01/25",
-                  "end_date": "25/02/25",
-                  "status": "OPEN",
-                  "capacity": 20
-                },
-              "schema": {
-                "type": "object",
-                "properties": {
-                  "course": {
-                    "type": "object",
-                    "items": {
-                      "$ref": "#/components/schemas/CoursePatchRequest"
-                    }
-                  }
-                }
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "Course updated successfully",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/CourseResponse"
-                }
-              }
-            }
-          },
-          "400": {
-            "description": "Bad request.",
-             "content": {
-              "application/json":{
-                "schema":{
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          },
-          "401": {
-            "description": "Unauthorised request.",
-             "content": {
-              "application/json":{
-                "schema":{
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          },
-          "403": {
-            "description": "Forbidden request.",
-             "content": {
-              "application/json":{
-                "schema":{
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "Resource not found.",
-            "content": {
-              "application/json":{
-                "schema":{
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          }
-        }
-      }
     }
+    
   }
 }

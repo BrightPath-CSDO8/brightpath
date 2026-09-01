@@ -2,7 +2,7 @@ from datetime import date
 from decimal import Decimal
 from enum import Enum
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 
 class CourseStatus(str, Enum):
@@ -12,7 +12,7 @@ class CourseStatus(str, Enum):
     PENDING = "PENDING"
 
 
-class CoursePostRequest(BaseModel):
+class CourseCreate(BaseModel):
     model_config = ConfigDict(extra="forbid")
     course_name: str
     course_fee: Decimal
@@ -21,6 +21,12 @@ class CoursePostRequest(BaseModel):
     start_date: date
     end_date: date
     capacity: int
+
+    @model_validator(mode="after")
+    def check_course_date(self):
+        if self.start_date >= self.end_date:
+            raise ValueError("End date must be on or after start date")
+        return self
 
 
 # fields are None because its a PATCH schema

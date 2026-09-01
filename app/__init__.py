@@ -1,6 +1,6 @@
 from flask import Flask
 from app.extensions import db
-from datetime import datetime
+from datetime import date
 
 
 def create_app():
@@ -27,44 +27,44 @@ def create_app():
             course1 = Course(
                 course_id_bus="CSR-1010",
                 course_name="Python Fundamentals",
-                course_fee="180.80",
+                course_fee=180.80,
                 description="Learn the basics of Python",
                 schedule="Monday 9am - 11am",
-                start_date=datetime.strptime("20/02/2026", "%d/%m/%Y").date(),
-                end_date=datetime.strptime("28/02/2026", "%d/%m/%Y").date(),
+                start_date=date.fromisoformat("2026-04-10"),
+                end_date=date.fromisoformat("2026-05-01"),
                 capacity=20,
                 status="OPEN",
             )
             course2 = Course(
                 course_id_bus="CSR-1011",
                 course_name="Introduction to Computer Science",
-                course_fee="180.80",
+                course_fee=180.80,
                 description="An introductory computer science course.",
                 schedule="Tuesday 9am - 11am",
-                start_date=datetime.strptime("20/03/2026", "%d/%m/%Y").date(),
-                end_date=datetime.strptime("28/03/2026", "%d/%m/%Y").date(),
+                start_date=date.fromisoformat("2026-07-10"),
+                end_date=date.fromisoformat("2026-08-13"),
                 capacity=20,
                 status="PENDING",
             )
             course3 = Course(
                 course_id_bus="CSR-1013",
                 course_name="Introduction to Cloud Infrastructure with AWS",
-                course_fee="300.80",
+                course_fee=300.80,
                 description="Learn how to build and manage modern web apps in the cloud. This beginner course covers core Amazon Web Services tools like EC2 servers, S3 storage, and basic networking. You will deploy your first live application by the end of the class. No prior cloud experience is needed.",
                 schedule="Tuesday 9am - 11am",
-                start_date=datetime.strptime("20/05/2026", "%d/%m/%Y").date(),
-                end_date=datetime.strptime("28/05/2026", "%d/%m/%Y").date(),
+                start_date=date.fromisoformat("2026-09-10"),
+                end_date=date.fromisoformat("2026-10-01"),
                 capacity=30,
                 status="OPEN",
             )
             course4 = Course(
                 course_id_bus="CSR-2020",
                 course_name="Introduction to Web Application",
-                course_fee="280.80",
+                course_fee=280.80,
                 description="An introductory computer science course.",
                 schedule="Tuesday 9am - 11am",
-                start_date=datetime.strptime("20/04/2026", "%d/%m/%Y").date(),
-                end_date=datetime.strptime("28/04/2026", "%d/%m/%Y").date(),
+                start_date=date.fromisoformat("2026-08-10"),
+                end_date=date.fromisoformat("2026-09-01"),
                 capacity=40,
                 status="INACTIVE",
             )
@@ -73,9 +73,5 @@ def create_app():
             db.session.commit()
 
     app.register_blueprint(course_bp)
-
-    # Parse JSON payload strings into Python objects
-    # parsed_start = datetime.strptime(data['start_date'], '%d/%m/%Y').date()
-    # parsed_end = datetime.strptime(data['end_date'], '%d/%m/%Y').date()
 
     return app
