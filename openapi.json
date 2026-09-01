@@ -354,7 +354,6 @@
             "content": {
               "application/json": {
                  "example": {
-                  "id": 1,
                   "course_id_bus": "CSR-1010",
                   "course_name": "Fundamentals of Python",
                   "course_fee": 180.80,
@@ -380,7 +379,14 @@
             }
           },
           "404": {
-            "description": "No such course."
+            "description": "Course not found.",
+            "content": {
+              "application/json":{
+                "schema":{
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
           },
           "500": {
             "description": "Error fetching course."

@@ -12,6 +12,20 @@ class CourseStatus(str, Enum):
     PENDING = "PENDING"
 
 
+class CourseResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    course_id_bus: str
+    course_name: str
+    course_fee: Decimal
+    description: str
+    schedule: str
+    start_date: date
+    end_date: date
+    capacity: int
+    status: CourseStatus
+
+
 class CourseCreate(BaseModel):
     model_config = ConfigDict(extra="forbid")
     course_name: str

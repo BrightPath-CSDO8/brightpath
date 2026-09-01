@@ -4,7 +4,7 @@ from app.models.course import Course
 from pydantic import ValidationError
 
 # Schemas
-from app.schemas.course_schema import CoursePatchRequest, CourseCreate
+from app.schemas.course_schema import CoursePatchRequest, CourseCreate, CourseResponse
 
 # Service
 from app.services.course_service import svc_update_course, svc_create_course
@@ -17,20 +17,24 @@ course_bp = Blueprint("course", __name__)
 def get_courses():
     courses = Course.query.all()
 
-    return [
-        {
-            "course_id_bus": course.course_id_bus,
-            "course_name": course.course_name,
-            "course_fee": float(course.course_fee),
-            "description": course.description,
-            "schedule": course.schedule,
-            "start_date": course.start_date.isoformat() if course.start_date else None,
-            "end_date": course.end_date.isoformat() if course.end_date else None,
-            "status": course.status,
-            "capacity": course.capacity,
-        }
-        for course in courses
-    ]
+    response = [CourseResponse.model_validate(course) for course in courses]
+
+    return jsonify([course.model_dump(mode="json") for course in response]), 200
+
+
+# GET INDIV COURSE
+@course_bp.route("/api/v1/courses/<string:course_id_bus>", methods=["GET"])
+def get_one_course(course_id_bus):
+    course = Course.query.filter_by(course_id_bus=course_id_bus).first()
+
+    if course is None:
+        return (
+            jsonify({"error": "Bad request.", "message": "Course not found"}),
+            404,
+        )
+    course_response = CourseResponse.model_validate(course)
+
+    return jsonify(course_response.model_dump(mode="json")), 200
 
 
 # CREATE COURSE
@@ -146,7 +150,6 @@ def update_course(course_id_bus):
             404,
         )
 
-    # Return updated course
     return (
         jsonify(
             {
