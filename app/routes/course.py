@@ -4,7 +4,12 @@ from app.models.course import Course
 from pydantic import ValidationError
 
 # Schemas
-from app.schemas.course_schema import CoursePatchRequest, CourseCreate, CourseResponse
+from app.schemas.course_schema import (
+    CoursePatchRequest,
+    CourseCreate,
+    CourseResponse,
+    CourseStatus,
+)
 
 # Service
 from app.services.course_service import svc_update_course, svc_create_course
@@ -12,10 +17,13 @@ from app.services.course_service import svc_update_course, svc_create_course
 course_bp = Blueprint("course", __name__)
 
 
-# GET ALL COURSES
+# GET AVAILABLE COURSES
 @course_bp.route("/api/v1/courses", methods=["GET"])
 def get_courses():
     courses = Course.query.all()
+
+    # This would be main endpoint for Public & Students
+    # courses = Course.query.filter_by(status=CourseStatus.OPEN).all()
 
     response = [CourseResponse.model_validate(course) for course in courses]
 
