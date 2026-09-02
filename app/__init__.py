@@ -7,7 +7,7 @@ def create_app():
 
     app = Flask(__name__, instance_relative_config=True)
 
-    app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///courses.db"
+    app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///edulearn.db"
     app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 
     db.init_app(app)
@@ -17,6 +17,7 @@ def create_app():
 
     # Routes
     from app.routes.course import course_bp
+    from app.routes.auth import auth_bp
 
     # from . import models
 
@@ -73,5 +74,6 @@ def create_app():
             db.session.commit()
 
     app.register_blueprint(course_bp)
+    app.register_blueprint(auth_bp)
 
     return app
