@@ -1,5 +1,7 @@
 from enum import Enum
-from pydantic import BaseModel, EmailStr
+from datetime import date
+from pydantic import BaseModel, EmailStr, ConfigDict, Field, field_validator
+import re
 
 
 class UserRole(str, Enum):
@@ -12,6 +14,20 @@ class UserRole(str, Enum):
 class StudentCreate(BaseModel):
     email: EmailStr
     password: str
+    first_name: str
+    last_name: str
+    mobile: str = Field(pattern=r"^[89]\d{7}$")
+    dob: date
+
+
+class StudentResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+    student_id_bus: str
+    first_name: str
+    last_name: str
+    mobile: str
+    dob: date
+    role: UserRole
 
 
 class StaffCreate(BaseModel):

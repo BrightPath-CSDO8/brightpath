@@ -1,12 +1,18 @@
 from flask import Blueprint, request, jsonify
+from sqlalchemy.exc import IntegrityError
+
 from app.models.users import User
+from app.extensions import db
 from pydantic import ValidationError
 
 # Schemas
-from app.schemas.user_schema import StudentCreate, StaffCreate
+from app.schemas.user_schema import StudentCreate, StudentResponse, StaffCreate
 
 # Service
 from app.services.user_service import svc_register_student, svc_register_staff
+
+# Exceptions
+from app.exceptions.auth import EmailAlreadyRegisteredError
 
 auth_bp = Blueprint("auth", __name__)
 
@@ -48,10 +54,52 @@ def register_student():
             ),
             400,
         )
-    student_reg = student_data.model_dump()
-    student = svc_register_student(student_reg)
+    # 2. Perform registration operation
+    try:
+        student = svc_register_student(student_data)
+    except EmailAlreadyRegisteredError as e:
+        return (
+            jsonify(
+                {
+                    "error": "Conflict.",
+                    "message": str(e),
+                }
+            ),
+            409,
+        )
+    except IntegrityError:
+        return (
+            jsonify(
+                {
+                    "error": "Conflict.",
+                    "message": "Registration conflicts with existing data.",
+                }
+            ),
+            409,
+        )
+    except Exception as e:
+        print("Registration failed:", e)
 
-    return (jsonify({"message": "student created"}), 201)
+        return (
+            jsonify(
+                {
+                    "error": "Internal server error.",
+                    "message": "Student registration failed.",
+                }
+            ),
+            500,
+        )
+
+    student_response = StudentResponse(
+        student_id_bus=student.student_id_bus,
+        first_name=student.first_name,
+        last_name=student.last_name,
+        mobile=student.mobile,
+        dob=student.dob,
+        role=student.user.role,
+    )
+
+    return jsonify(student_response.model_dump(mode="json")), 201
 
 
 # Register for SuperAdmins, Admins, Teachers
