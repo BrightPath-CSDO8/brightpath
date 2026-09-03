@@ -1,7 +1,6 @@
 from enum import Enum
 from datetime import date
 from pydantic import BaseModel, EmailStr, ConfigDict, Field, field_validator
-import re
 
 
 class UserRole(str, Enum):
