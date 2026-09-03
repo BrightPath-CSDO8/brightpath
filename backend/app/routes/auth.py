@@ -102,6 +102,9 @@ def register_student():
     return jsonify(student_response.model_dump(mode="json")), 201
 
 
+# Login student
+
+
 # Register for SuperAdmins, Admins, Teachers
 # SuperAd -> SuperAd, Admin, Teacher
 # Admin -> Teacher
