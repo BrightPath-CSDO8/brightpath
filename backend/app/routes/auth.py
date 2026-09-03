@@ -103,6 +103,9 @@ def register_student():
 
 
 # Login student
+@auth_bp.route("/api/v1/login", methods=["POST"])
+def login():
+    pass
 
 
 # Register for SuperAdmins, Admins, Teachers
