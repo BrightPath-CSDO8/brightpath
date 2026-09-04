@@ -12,19 +12,26 @@ from app.utils import generate_business_id
 from app.exceptions.auth import EmailAlreadyRegisteredError
 
 
-def svc_register_student(data):
+def svc_register_student(data, identity):
+
+    # Extract identity information
+    entra_object_id = identity["oid"]
+    email = identity["email"]
 
     # pre-check for duplicated email
-    existing_student = User.query.filter_by(email=data.email).first()
+    existing_user = User.query.filter_by(email=email).first()
+    # When Entra iD is implemented:
+    # existing_user = User.query.filter_by(entra_object_id=entra_object_id).first()
 
-    if existing_student:
+    if existing_user:
         raise EmailAlreadyRegisteredError("Email address is already registered.")
 
     try:
         # Create User
         user = User(
-            email=data.email,
-            password_hash=hash_password(data.password),
+            email=email,
+            entra_object_id=entra_object_id,
+            # password_hash=hash_password(data.password),
             role="STUDENT",
         )
 

@@ -1,4 +1,6 @@
 from app.extensions import db
+from datetime import datetime
+from zoneinfo import ZoneInfo
 
 
 class User(db.Model):
@@ -11,11 +13,22 @@ class User(db.Model):
         name="user_role",
         nullable=False,
     )
-    # created_at = db.Column(db.DateTime, nullable=False)
-    # Temporary nullable=True, to be replaced with Entra ID
+    # Temporary nullable=True, to be change to False once Entra ID is ready
     entra_object_id = db.Column(db.String(255), unique=True, nullable=True)
+    # password_hash is irrelevant once Entra ID is implemented
     password_hash = db.Column(db.String(255), nullable=True)
 
+    created_at = db.Column(
+        db.DateTime,
+        nullable=False,
+        default=lambda: datetime.now(ZoneInfo("Asia/Singapore")),
+    )
+    updated_at = db.Column(
+        db.DateTime,
+        nullable=False,
+        default=lambda: datetime.now(ZoneInfo("Asia/Singapore")),
+        onupdate=lambda: datetime.now(ZoneInfo("Asia/Singapore")),
+    )
     student = db.relationship("Student", back_populates="user", uselist=False)
 
 

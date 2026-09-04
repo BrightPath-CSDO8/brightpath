@@ -16,6 +16,9 @@ from app.services.auth_service import svc_login
 # Exceptions
 from app.exceptions.auth import EmailAlreadyRegisteredError, AuthenticationError
 
+# Mock entra id
+from app.auth.mock_entra import MOCK_ENTRA_IDENTITY
+
 auth_bp = Blueprint("auth", __name__)
 
 
@@ -58,7 +61,7 @@ def register_student():
         )
     # 2. Perform registration operation
     try:
-        student = svc_register_student(student_data)
+        student = svc_register_student(student_data, MOCK_ENTRA_IDENTITY)
     except EmailAlreadyRegisteredError as e:
         return (
             jsonify(

@@ -11,8 +11,8 @@ class UserRole(str, Enum):
 
 
 class StudentCreate(BaseModel):
-    email: EmailStr
-    password: str
+    # email: EmailStr
+    # password: str
     first_name: str
     last_name: str
     mobile: str = Field(pattern=r"^[89]\d{7}$")
