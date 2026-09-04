@@ -7,12 +7,14 @@ from pydantic import ValidationError
 
 # Schemas
 from app.schemas.user_schema import StudentCreate, StudentResponse, StaffCreate
+from app.schemas.auth_schema import LoginRequest
 
 # Service
 from app.services.user_service import svc_register_student, svc_register_staff
+from app.services.auth_service import svc_login
 
 # Exceptions
-from app.exceptions.auth import EmailAlreadyRegisteredError
+from app.exceptions.auth import EmailAlreadyRegisteredError, AuthenticationError
 
 auth_bp = Blueprint("auth", __name__)
 
@@ -41,7 +43,7 @@ def register_student():
         details = {}
 
         for error in e.errors():
-            field = error["loc"][0] if error["loc"] else "course"
+            field = error["loc"][0] if error["loc"] else "request"
             details[field] = error["msg"]
 
         return (
@@ -103,6 +105,49 @@ def register_student():
 
 
 # Login student
+@auth_bp.route("/api/v1/login", methods=["POST"])
+def login():
+    response = request.get_json(silent=True)
+
+    if not response:
+        return (
+            jsonify({"error": "Bad request.", "message": "Request body is required"}),
+            400,
+        )
+
+    try:
+        login_user = LoginRequest.model_validate(response)
+    except ValidationError as e:
+        details = {}
+
+        for error in e.errors():
+            field = error["loc"][0] if error["loc"] else "request"
+            details[field] = error["msg"]
+
+        return (
+            jsonify(
+                {
+                    "error": "Bad request.",
+                    "message": "Invalid request body.",
+                    "details": details,
+                }
+            ),
+            400,
+        )
+
+    try:
+        svc_login(login_user)
+    except AuthenticationError as e:
+        return (
+            jsonify(
+                {
+                    "error": "Unauthorized.",
+                    "message": str(e),
+                }
+            ),
+            401,
+        )
+    return jsonify({"message": "Login successful"}), 200
 
 
 # Register for SuperAdmins, Admins, Teachers
