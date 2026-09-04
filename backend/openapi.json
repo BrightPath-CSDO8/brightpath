@@ -133,6 +133,19 @@
           "role"
         ]
       },
+      "StudentLogin":{
+        "type":"object",
+        "properties": {
+          "email":{
+            "type":"string",
+            "example":"jane.tan@example.com"
+          },
+          "password":{
+            "type":"string",
+            "example":"password123"
+          }
+        }
+      },
       "CourseResponse": {
         "type": "object",
         "properties": {
@@ -649,7 +662,7 @@
               "schema":{
                 "type":"object",
                 "properties": {
-                  "course":{
+                  "student":{
                     "type":"object",
                     "items":{
                       "$ref": "#/components/schemas/StudentCreation"
@@ -667,6 +680,58 @@
               "application/json":{
                 "schema":{
                   "$ref": "#/components/schemas/StudentCreateResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/login": {
+      "post": {
+        "description": "Student Login",
+        "operationId": "studentLogin",
+        "tags": ["Users"],
+        "parameters": [],
+        "requestBody":{
+          "required": true,
+          "content": {
+            "application/json":{
+              "example":{
+                "email":"jane.tan@example.com",
+                "password":"password123"
+              },
+              "schema":{
+                "type":"object",
+                "properties": {
+                  "student":{
+                    "type":"object",
+                    "items":{
+                      "$ref": "#/components/schemas/StudentLogin"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json":{
+                "example":{
+                  "message":"Login successfully."
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized.",
+            "content": {
+              "application/json":{
+                "example":{
+                  "message":"Email and/or password is incorrect."
                 }
               }
             }
