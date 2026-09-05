@@ -8,6 +8,7 @@ from app.utils.password import verify_hash_password
 from app.exceptions.auth import AuthenticationError
 
 
+# Temporary Login service
 def svc_login(data):
     user = User.query.filter_by(email=data.email).first()
 

@@ -1,5 +1,5 @@
 MOCK_ENTRA_IDENTITY = {
-    "oid": "mock-student-001",
-    "email": "student@example.com",
+    "oid": "DEV-ENTRA-001",
+    "email": "entra-student-dev@example.com",
     "name": "Test Student",
 }

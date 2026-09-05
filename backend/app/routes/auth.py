@@ -107,7 +107,7 @@ def register_student():
     return jsonify(student_response.model_dump(mode="json")), 201
 
 
-# Login student
+# Login student (Temporary)
 @auth_bp.route("/api/v1/login", methods=["POST"])
 def login():
     response = request.get_json(silent=True)
@@ -151,6 +151,18 @@ def login():
             401,
         )
     return jsonify({"message": "Login successful"}), 200
+
+
+# For Entra ID
+@auth_bp.route("/login", methods=["GET"])
+def entra_login():
+    pass
+
+
+# For Entra ID
+@auth_bp.route("/auth/callback", methods=["GET"])
+def entra_callback():
+    pass
 
 
 # Register for SuperAdmins, Admins, Teachers
