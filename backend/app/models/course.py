@@ -12,9 +12,13 @@ class Course(db.Model):
     schedule = db.Column(db.Text)
     start_date = db.Column(db.Date)
     end_date = db.Column(db.Date)
+    classroom_id = db.Column(db.Integer, db.ForeignKey("classroom.id"), nullable=True)
     status = db.Column(
         db.Enum("OPEN", "CLOSED", "INACTIVE", "PENDING"),
         name="course_status_enum",
         index=True,
     )
     capacity = db.Column(db.Integer)
+
+    # SQLAlchemy ORM relationship
+    classroom = db.relationship("Classroom", back_populates="courses")

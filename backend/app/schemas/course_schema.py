@@ -2,7 +2,7 @@ from datetime import date
 from decimal import Decimal
 from enum import Enum
 
-from pydantic import BaseModel, ConfigDict, Field, model_validator
+from pydantic import BaseModel, ConfigDict, Field, model_validator, field_validator
 
 
 class CourseStatus(str, Enum):
@@ -23,7 +23,15 @@ class CourseResponse(BaseModel):
     start_date: date
     end_date: date
     capacity: int
+    classroom: str | None
     status: CourseStatus
+
+    @field_validator("classroom", mode="before")
+    @classmethod
+    def get_classroom_name(cls, value):
+        if value is None:
+            return None
+        return value.room_name
 
 
 class CourseCreate(BaseModel):
@@ -35,6 +43,7 @@ class CourseCreate(BaseModel):
     start_date: date
     end_date: date
     capacity: int
+    classroom_id: int | None = None
 
     @model_validator(mode="after")
     def check_course_date(self):
@@ -56,4 +65,5 @@ class CoursePatchRequest(BaseModel):
     start_date: date | None = None
     end_date: date | None = None
     capacity: int | None = None
+    classroom_id: int | None = None
     status: CourseStatus | None = None

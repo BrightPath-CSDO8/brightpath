@@ -189,6 +189,10 @@
           "capacity": {
             "type": "integer",
             "example":30
+          },
+             "classroom":{
+            "type":"string",
+            "example": "Roses"
           }
         },
         "required": [
@@ -200,7 +204,8 @@
           "start_date",
           "end_date",
           "capacity",
-          "status"
+          "status",
+          "classroom"
         ]
       },
       "CourseCreate":{
@@ -266,6 +271,10 @@
           "schedule": {
             "type": "string"
           },
+          "classroom_id":{
+            "type":"integer",
+            "example": 2
+          },
           "start_date": {
             "type": "string",
             "format": "date",
@@ -329,6 +338,7 @@
                   "course_fee": 180.80,
                   "description": "Learn Basics of Python",
                   "schedule":"Monday, 9am - 11am",
+                  "classroom":"Roses",
                   "start_date": "2026-09-01",
                   "end_date": "2026-10-01",
                   "status": "OPEN",
@@ -453,6 +463,7 @@
                   "course_fee": 180.80,
                   "description": "Learn Basics of Python",
                   "schedule":"Monday, 9am - 11am",
+                  "classroom":"Roses",
                   "start_date": "2026-09-01",
                   "end_date": "2026-10-01",
                   "status": "OPEN",

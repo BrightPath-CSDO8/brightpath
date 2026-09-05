@@ -58,7 +58,7 @@ def create_course():
 
     # Validate request using Pydantic
     try:
-        create_request = CourseCreate.model_validate(response)
+        create_course_req = CourseCreate.model_validate(response)
 
     except ValidationError as e:
         print("============================")
@@ -83,11 +83,10 @@ def create_course():
             ),
             400,
         )
-    course_req = create_request.model_dump(exclude_unset=True)
+    course_req = create_course_req.model_dump(exclude_unset=True)
 
     course = svc_create_course(course_req)
 
-    # return created course
     return (
         jsonify(
             {
@@ -96,6 +95,7 @@ def create_course():
                 "course_fee": float(course.course_fee),
                 "description": course.description,
                 "schedule": course.schedule,
+                "classroom": course.classroom.room_name if course.classroom else None,
                 "start_date": (
                     course.start_date.isoformat() if course.start_date else None
                 ),
@@ -165,6 +165,7 @@ def update_course(course_id_bus):
                 "course_fee": float(course.course_fee),
                 "description": course.description,
                 "schedule": course.schedule,
+                "classroom": course.classroom.room_name if course.classroom else None,
                 "start_date": (
                     course.start_date.isoformat() if course.start_date else None
                 ),
