@@ -14,16 +14,26 @@ def create_app():
 
     # Models
     from app.models.course import Course
+    from app.models.classroom import Classroom
 
     # Routes
     from app.routes.course import course_bp
     from app.routes.auth import auth_bp
+    from app.routes.classroom import classroom_bp
 
     # from . import models
 
     with app.app_context():
         db.create_all()
 
+        # Cretae mock classroom data on initial start up
+        if Classroom.query.count() == 0:
+            class1 = Classroom(room_name="Roses", class_capacity=20)
+            class2 = Classroom(room_name="Daisies", class_capacity=20)
+            class3 = Classroom(room_name="Tulips", class_capacity=20)
+            class4 = Classroom(room_name="Sunflowers", class_capacity=20)
+
+        # Create mock courses on initial start up
         if Course.query.count() == 0:
             course1 = Course(
                 course_id_bus="CSR-1010",
@@ -34,6 +44,7 @@ def create_app():
                 start_date=date.fromisoformat("2026-04-10"),
                 end_date=date.fromisoformat("2026-05-01"),
                 capacity=20,
+                classroom_id=1,
                 status="OPEN",
             )
             course2 = Course(
@@ -45,6 +56,7 @@ def create_app():
                 start_date=date.fromisoformat("2026-07-10"),
                 end_date=date.fromisoformat("2026-08-13"),
                 capacity=20,
+                classroom_id=2,
                 status="PENDING",
             )
             course3 = Course(
@@ -56,6 +68,7 @@ def create_app():
                 start_date=date.fromisoformat("2026-09-10"),
                 end_date=date.fromisoformat("2026-10-01"),
                 capacity=30,
+                classroom_id=3,
                 status="OPEN",
             )
             course4 = Course(
@@ -67,13 +80,18 @@ def create_app():
                 start_date=date.fromisoformat("2026-08-10"),
                 end_date=date.fromisoformat("2026-09-01"),
                 capacity=40,
+                classroom_id=4,
                 status="INACTIVE",
             )
-            db.session.add_all([course1, course2, course3, course4])
+
+            db.session.add_all(
+                [course1, course2, course3, course4, class1, class2, class3, class4]
+            )
 
             db.session.commit()
 
     app.register_blueprint(course_bp)
     app.register_blueprint(auth_bp)
+    app.register_blueprint(classroom_bp)
 
     return app
