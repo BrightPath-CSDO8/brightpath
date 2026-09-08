@@ -1,7 +1,9 @@
-from app.extensions import db
-from app.models.course import Course
+from backend.app.extensions import db
 
-from app.utils import generate_business_id
+# from app.models.course import Course
+from database.models import Course
+
+from backend.app.utils import generate_business_id
 
 
 def svc_create_course(data):
@@ -24,6 +26,8 @@ def svc_create_course(data):
         end_date=data["end_date"],
         capacity=data["capacity"],
         status="PENDING",
+        teacher_id=data["teacher_id"],
+        classroom_id=data["classroom_id"],
     )
 
     db.session.add(course)

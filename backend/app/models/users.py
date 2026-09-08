@@ -11,10 +11,10 @@ class User(db.Model):
         name="user_role",
         nullable=False,
     )
-    # created_at = db.Column(db.DateTime, nullable=False)
+    created_at = db.Column(db.DateTime, nullable=False)
     # Temporary nullable=True, to be replaced with Entra ID
     entra_object_id = db.Column(db.String(255), unique=True, nullable=True)
-    password_hash = db.Column(db.String(255), nullable=True)
+    # password_hash = db.Column(db.String(255), nullable=True)
 
     student = db.relationship("Student", back_populates="user", uselist=False)
 

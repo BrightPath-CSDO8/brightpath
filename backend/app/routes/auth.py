@@ -1,20 +1,21 @@
 from flask import Blueprint, request, jsonify
 from sqlalchemy.exc import IntegrityError
-
-from app.models.users import User
-from app.extensions import db
+from backend.app.extensions import db
 from pydantic import ValidationError
 
+# from app.models.users import User
+from database.models import Users
+
 # Schemas
-from app.schemas.user_schema import StudentCreate, StudentResponse, StaffCreate
-from app.schemas.auth_schema import LoginRequest
+from backend.app.schemas.user_schema import StudentCreate, StudentResponse, StaffCreate
+from backend.app.schemas.auth_schema import LoginRequest
 
 # Service
-from app.services.user_service import svc_register_student, svc_register_staff
-from app.services.auth_service import svc_login
+from backend.app.services.user_service import svc_register_student, svc_register_staff
+from backend.app.services.auth_service import svc_login
 
 # Exceptions
-from app.exceptions.auth import EmailAlreadyRegisteredError, AuthenticationError
+from backend.app.exceptions.auth import EmailAlreadyRegisteredError, AuthenticationError
 
 auth_bp = Blueprint("auth", __name__)
 

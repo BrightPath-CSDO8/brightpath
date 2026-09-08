@@ -23,15 +23,17 @@ class CourseResponse(BaseModel):
     start_date: date
     end_date: date
     capacity: int
-    classroom: str | None
+    # classroom: str | None
+    teacher_id: int
+    classroom_id: int
     status: CourseStatus
 
-    @field_validator("classroom", mode="before")
-    @classmethod
-    def get_classroom_name(cls, value):
-        if value is None:
-            return None
-        return value.room_name
+    # @field_validator("classroom", mode="before")
+    # @classmethod
+    # def get_classroom_name(cls, value):
+    #     if value is None:
+    #         return None
+    #     return value.room_name
 
 
 class CourseCreate(BaseModel):
@@ -43,7 +45,8 @@ class CourseCreate(BaseModel):
     start_date: date
     end_date: date
     capacity: int
-    classroom_id: int | None = None
+    classroom_id: int
+    teacher_id: int
 
     @model_validator(mode="after")
     def check_course_date(self):
@@ -67,3 +70,4 @@ class CoursePatchRequest(BaseModel):
     capacity: int | None = None
     classroom_id: int | None = None
     status: CourseStatus | None = None
+    teacher_id: int | None = None

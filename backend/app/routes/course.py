@@ -1,9 +1,11 @@
 from flask import Blueprint, request, jsonify
-from app.models.course import Course
 from pydantic import ValidationError
 
+# from app.models.course import Course
+from database.models import Course
+
 # Schemas
-from app.schemas.course_schema import (
+from backend.app.schemas.course_schema import (
     CoursePatchRequest,
     CourseCreate,
     CourseResponse,
@@ -11,7 +13,7 @@ from app.schemas.course_schema import (
 )
 
 # Service
-from app.services.course_service import svc_update_course, svc_create_course
+from backend.app.services.course_service import svc_update_course, svc_create_course
 
 course_bp = Blueprint("course", __name__)
 
@@ -95,7 +97,9 @@ def create_course():
                 "course_fee": float(course.course_fee),
                 "description": course.description,
                 "schedule": course.schedule,
-                "classroom": course.classroom.room_name if course.classroom else None,
+                # "classroom": course.classroom.room_name if course.classroom else None,
+                "classroom_id": course.classroom_id,
+                "teacher_id": course.teacher_id,
                 "start_date": (
                     course.start_date.isoformat() if course.start_date else None
                 ),
@@ -165,7 +169,9 @@ def update_course(course_id_bus):
                 "course_fee": float(course.course_fee),
                 "description": course.description,
                 "schedule": course.schedule,
-                "classroom": course.classroom.room_name if course.classroom else None,
+                # "classroom": course.classroom.room_name if course.classroom else None,
+                "classroom_id": course.classroom_id,
+                "teacher_id": course.teacher_id,
                 "start_date": (
                     course.start_date.isoformat() if course.start_date else None
                 ),

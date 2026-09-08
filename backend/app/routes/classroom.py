@@ -1,12 +1,14 @@
 from flask import Blueprint, request, jsonify
-from app.models.classroom import Classroom
 from pydantic import ValidationError
 
+# from app.models.classroom import Classroom
+from database.models import Classroom
+
 # Schema
-from app.schemas.classroom_schema import ClassroomCreate, AllClassrooms
+from backend.app.schemas.classroom_schema import ClassroomCreate, AllClassrooms
 
 # Service
-from app.services.classroom_service import svc_create_classroom
+from backend.app.services.classroom_service import svc_create_classroom
 
 classroom_bp = Blueprint("classroom", __name__)
 

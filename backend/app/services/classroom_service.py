@@ -1,5 +1,7 @@
-from app.extensions import db
-from app.models.classroom import Classroom
+from backend.app.extensions import db
+
+# from app.models.classroom import Classroom
+from database.models import Classroom
 
 
 def svc_create_classroom(data):
