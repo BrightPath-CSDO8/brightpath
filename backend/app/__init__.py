@@ -1,6 +1,5 @@
 from flask import Flask
-
-
+from backend.app.config import Config
 from backend.app.extensions import db
 
 
@@ -8,11 +7,10 @@ def create_app():
 
     app = Flask(__name__, instance_relative_config=True)
 
+    app.config.from_object(Config)
+
     app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///edulearn.db"
     app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
-
-    print(app.instance_path)
-    print(app.config["SQLALCHEMY_DATABASE_URI"])
 
     db.init_app(app)
 
