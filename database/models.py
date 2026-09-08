@@ -1,0 +1,366 @@
+from extensions import db
+
+
+class Users(db.Model):
+    __tablename__ = "Users"
+
+    user_id = db.Column(db.Integer, primary_key=True)
+
+    entra_object_id = db.Column(
+        db.String(255),
+        unique=True,
+        nullable=True
+    )
+
+    email = db.Column(
+        db.String(255),
+        unique=True,
+        nullable=False
+    )
+
+    role = db.Column(
+        db.String(20),
+        nullable=False
+    )
+
+    created_at = db.Column(
+        db.DateTime,
+        nullable=False,
+        server_default=db.func.now()
+    )
+
+class Student(db.Model):
+    __tablename__ = "Student"
+
+    student_id = db.Column(
+        db.Integer,
+        primary_key=True
+    )
+
+    student_id_bus = db.Column(
+        db.String(20),
+        unique=True,
+        nullable=False
+    )
+
+    user_id = db.Column(
+        db.Integer,
+        db.ForeignKey("Users.user_id"),
+        unique=True,
+        nullable=False
+    )
+
+    first_name = db.Column(
+        db.String(100),
+        nullable=False
+    )
+
+    last_name = db.Column(
+        db.String(100),
+        nullable=False
+    )
+
+    dob = db.Column(
+        db.Date,
+        nullable=True
+    )
+
+    mobile = db.Column(
+        db.String(20),
+        nullable=True
+    )
+
+    status = db.Column(
+        db.String(20),
+        nullable=False,
+        default="ACTIVE"
+    )
+
+    created_at = db.Column(
+        db.DateTime,
+        nullable=False,
+        server_default=db.func.now()
+    )
+
+class Teacher(db.Model):
+    __tablename__ = "Teacher"
+
+    teacher_id = db.Column(
+        db.Integer,
+        primary_key=True
+    )
+
+    teacher_id_bus = db.Column(
+        db.String(20),
+        unique=True,
+        nullable=False
+    )
+
+    user_id = db.Column(
+        db.Integer,
+        db.ForeignKey("Users.user_id"),
+        unique=True,
+        nullable=False
+    )
+
+    salutation = db.Column(
+        db.String(10),
+        nullable=True
+    )
+
+    first_name = db.Column(
+        db.String(100),
+        nullable=False
+    )
+
+    last_name = db.Column(
+        db.String(100),
+        nullable=False
+    )
+
+    mobile = db.Column(
+        db.String(20),
+        nullable=True
+    )
+
+    status = db.Column(
+        db.String(20),
+        nullable=False,
+        default="ACTIVE"
+    )
+
+    created_at = db.Column(
+        db.DateTime,
+        nullable=False,
+        server_default=db.func.now()
+    )
+
+class Admin(db.Model):
+    __tablename__ = "Admin"
+
+    admin_id = db.Column(
+        db.Integer,
+        primary_key=True
+    )
+
+    user_id = db.Column(
+        db.Integer,
+        db.ForeignKey("Users.user_id"),
+        unique=True,
+        nullable=False
+    )
+
+    first_name = db.Column(
+        db.String(100),
+        nullable=False
+    )
+
+    last_name = db.Column(
+        db.String(100),
+        nullable=False
+    )
+
+    created_at = db.Column(
+        db.DateTime,
+        nullable=False,
+        server_default=db.func.now()
+    )
+
+class Classroom(db.Model):
+    __tablename__ = "Classroom"
+
+    classroom_id = db.Column(
+        db.Integer,
+        primary_key=True
+    )
+
+    room_name = db.Column(
+        db.String(100),
+        unique=True,
+        nullable=False
+    )
+
+    class_capacity = db.Column(
+        db.Integer,
+        nullable=False
+    )
+
+class Course(db.Model):
+    __tablename__ = "Course"
+
+    course_id = db.Column(
+        db.Integer,
+        primary_key=True
+    )
+
+    course_id_bus = db.Column(
+        db.String(20),
+        unique=True,
+        nullable=False
+    )
+
+    course_name = db.Column(
+        db.String(150),
+        nullable=False
+    )
+
+    description = db.Column(
+        db.Text,
+        nullable=True
+    )
+
+    course_fee = db.Column(
+        db.Numeric(10, 2),
+        nullable=False
+    )
+
+    schedule = db.Column(
+        db.String(100),
+        nullable=False
+    )
+
+    start_date = db.Column(
+        db.Date,
+        nullable=False
+    )
+
+    end_date = db.Column(
+        db.Date,
+        nullable=False
+    )
+
+    status = db.Column(
+        db.String(20),
+        nullable=False,
+        default="PENDING"
+    )
+
+    capacity = db.Column(
+        db.Integer,
+        nullable=False
+    )
+
+    teacher_id = db.Column(
+        db.Integer,
+        db.ForeignKey("Teacher.teacher_id"),
+        nullable=False
+    )
+
+    classroom_id = db.Column(
+        db.Integer,
+        db.ForeignKey("Classroom.classroom_id"),
+        nullable=False
+    )
+
+class Enrolment(db.Model):
+    __tablename__ = "Enrolment"
+
+    enrolment_id = db.Column(
+        db.Integer,
+        primary_key=True
+    )
+
+    enrolment_id_bus = db.Column(
+        db.String(20),
+        unique=True,
+        nullable=False
+    )
+
+    student_id = db.Column(
+        db.Integer,
+        db.ForeignKey("Student.student_id"),
+        nullable=False
+    )
+
+    course_id = db.Column(
+        db.Integer,
+        db.ForeignKey("Course.course_id"),
+        nullable=False
+    )
+
+    enrolment_date = db.Column(
+        db.DateTime,
+        nullable=False,
+        server_default=db.func.now()
+    )
+
+    status = db.Column(
+        db.String(20),
+        nullable=False,
+        default="PENDING"
+    )
+
+    __table_args__ = (
+        db.UniqueConstraint(
+            "student_id",
+            "course_id",
+            name="uq_student_course"
+        ),
+    )
+
+class Attendance(db.Model):
+    __tablename__ = "Attendance"
+
+    attendance_id = db.Column(
+        db.Integer,
+        primary_key=True
+    )
+
+    enrolment_id = db.Column(
+        db.Integer,
+        db.ForeignKey("Enrolment.enrolment_id"),
+        nullable=False
+    )
+
+    attendance_date = db.Column(
+        db.Date,
+        nullable=False
+    )
+
+    status = db.Column(
+        db.String(20),
+        nullable=False,
+        default="NIL"
+    )
+
+    __table_args__ = (
+        db.UniqueConstraint(
+            "enrolment_id",
+            "attendance_date",
+            name="uq_attendance_enrolment_date"
+        ),
+    )
+
+class Grade(db.Model):
+    __tablename__ = "Grade"
+
+    grade_id = db.Column(
+        db.Integer,
+        primary_key=True
+    )
+
+    enrolment_id = db.Column(
+        db.Integer,
+        db.ForeignKey("Enrolment.enrolment_id"),
+        nullable=False
+    )
+
+    assessment_name = db.Column(
+        db.String(150),
+        nullable=False
+    )
+
+    score = db.Column(
+        db.Numeric(5, 2),
+        nullable=True
+    )
+
+    feedback = db.Column(
+        db.Text,
+        nullable=True
+    )
+
+    graded_date = db.Column(
+        db.Date,
+        nullable=True
+    )

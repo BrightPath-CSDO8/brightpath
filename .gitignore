@@ -14,3 +14,14 @@ __pycache__/
 
 # SQLite database
 backend/instance/
+# Database local test files
+database/instance/
+*.db
+
+# Environment variables / secrets
+.env
+
+# Virtual environments
+myenv/
+venv/
+.venv/
