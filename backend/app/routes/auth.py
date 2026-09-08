@@ -1,4 +1,9 @@
-from flask import Blueprint, request, jsonify
+from flask import Blueprint, request, jsonify, current_app, session, redirect
+import msal
+import json
+from urllib.parse import urlencode
+from urllib.request import urlopen
+
 from sqlalchemy.exc import IntegrityError
 from backend.app.extensions import db
 from pydantic import ValidationError
@@ -18,6 +23,124 @@ from backend.app.services.auth_service import svc_login
 from backend.app.exceptions.auth import EmailAlreadyRegisteredError, AuthenticationError
 
 auth_bp = Blueprint("auth", __name__)
+
+
+# MSAL helper
+def build_msal_app():
+    return msal.ConfidentialClientApplication(
+        client_id=current_app.config["ENTRA_AZURE_CLIENT_ID"],
+        authority=current_app.config["ENTRA_AZURE_AUTHORITY"],
+        client_credential=current_app.config["ENTRA_AZURE_CLIENT_SECRET"],
+    )
+
+
+# Checks Flask <--> Entra ID connection
+@auth_bp.route("/api/v1/auth/entra-test", methods=["GET"])
+def entra_test():
+    tenant_id = current_app.config["ENTRA_AZURE_TENANT_ID"]
+
+    metadata_url = (
+        f"https://login.microsoftonline.com/"
+        f"{tenant_id}/v2.0/.well-known/openid-configuration"
+    )
+
+    try:
+        with urlopen(metadata_url, timeout=5) as response:
+            metadata = json.load(response)
+
+        return jsonify(
+            {
+                "status": "success",
+                "message": "Successfully connected to Microsoft Entra ID",
+                "issuer": metadata.get("issuer"),
+                "authorization_endpoint": metadata.get("authorization_endpoint"),
+            }
+        )
+
+    except Exception as e:
+        return (
+            jsonify(
+                {
+                    "status": "error",
+                    "message": "Unable to connect to Microsoft Entra ID",
+                    "error": str(e),
+                }
+            ),
+            500,
+        )
+
+
+# Registers with Entra ID
+@auth_bp.route("/api/v1/auth/login", methods=["GET"])
+def entra_login():
+
+    msal_app = build_msal_app()
+
+    auth_url = msal_app.get_authorization_request_url(
+        scopes=[],
+        redirect_uri=current_app.config["ENTRA_AZURE_REDIRECT_URI"],
+    )
+
+    return redirect(auth_url)
+
+
+# After Entra ID, does a callback function
+@auth_bp.route("/api/v1/auth/callback/", methods=["GET"])
+def entra_callback():
+
+    if "error" in request.args:
+        return (
+            jsonify(
+                {
+                    "status": "error",
+                    "message": request.args.get("error_description")
+                    or request.args.get("error"),
+                }
+            ),
+            400,
+        )
+
+    if "code" not in request.args:
+        return (
+            jsonify(
+                {
+                    "status": "error",
+                    "message": "Authorization code not received.",
+                }
+            ),
+            400,
+        )
+
+    code = request.args["code"]
+
+    msal_app = build_msal_app()
+
+    result = msal_app.acquire_token_by_authorization_code(
+        code=code,
+        scopes=[],
+        redirect_uri=current_app.config["ENTRA_AZURE_REDIRECT_URI"],
+    )
+
+    if "error" in result:
+        return (
+            jsonify(
+                {
+                    "status": "error",
+                    "message": result.get("error_description") or result.get("error"),
+                }
+            ),
+            401,
+        )
+
+    session["user"] = result.get("id_token_claims")
+
+    return jsonify(
+        {
+            "status": "success",
+            "message": "Successfully authenticated with Microsoft Entra ID.",
+            "user": result.get("id_token_claims"),
+        }
+    )
 
 
 # Register student
