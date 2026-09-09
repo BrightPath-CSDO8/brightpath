@@ -22,20 +22,20 @@ from backend.app.services.auth_service import svc_login
 # Exceptions
 from backend.app.exceptions.auth import EmailAlreadyRegisteredError, AuthenticationError
 
-auth_bp = Blueprint("auth", __name__)
+auth_bp = Blueprint("auth", __name__, url_prefix="/api/v1")
 
 
 # MSAL helper
 def build_msal_app():
     return msal.ConfidentialClientApplication(
         client_id=current_app.config["ENTRA_AZURE_CLIENT_ID"],
-        authority=current_app.config["ENTRA_AZURE_AUTHORITY"],
+        authority=current_app.config["AUTHORITY"],
         client_credential=current_app.config["ENTRA_AZURE_CLIENT_SECRET"],
     )
 
 
 # Checks Flask <--> Entra ID connection
-@auth_bp.route("/api/v1/auth/entra-test", methods=["GET"])
+@auth_bp.route("/auth/entra-test", methods=["GET"])
 def entra_test():
     tenant_id = current_app.config["ENTRA_AZURE_TENANT_ID"]
 
@@ -71,21 +71,83 @@ def entra_test():
 
 
 # Registers with Entra ID
-@auth_bp.route("/api/v1/auth/login", methods=["GET"])
-def entra_login():
+@auth_bp.route("/auth/login", methods=["GET"])
+def get_login_url():
+    """Generates the login URL and caches the PKCE keys in the backend session."""
+    msal_client = build_msal_app()
 
-    msal_app = build_msal_app()
-
-    auth_url = msal_app.get_authorization_request_url(
-        scopes=[],
+    # 1. Generate the flow context containing the crucial PKCE keys
+    flow = msal_client.initiate_auth_code_flow(
+        scopes=["User.read"],
         redirect_uri=current_app.config["ENTRA_AZURE_REDIRECT_URI"],
     )
 
-    return redirect(auth_url)
+    # 2. Store the flow data in the BACKEND session for verification later
+    session["active_auth_flow"] = flow
+
+    # 3. Return the URL to the caller
+    return jsonify({"auth_uri": flow["auth_uri"]})
+
+
+# with auth_code_flow
+@auth_bp.route("/auth/exchange-code", methods=["POST"])
+def exchange_code():
+    """Validates the PKCE keys and exchanges the code using the active flow."""
+    # 1. Retrieve the cached flow containing the verifier keys
+    flow = session.pop("active_auth_flow", None)
+    if not flow:
+        return (
+            jsonify(
+                {
+                    "error": "No matching authentication session found or session expired."
+                }
+            ),
+            400,
+        )
+
+    data = request.get_json() or {}
+    auth_response = data.get("auth_response") or {}
+
+    # 2. Extract the code starting with '1.A...' from the payload
+    code = auth_response.get("code")
+    if not code:
+        return jsonify({"error": "Missing authorization code"}), 400
+
+    # 3. Reconstruct a clean response dictionary for MSAL to evaluate
+    msal_auth_response = {
+        "code": code,
+        "state": flow.get("state"),  # Forces state matching to bypass manual state gaps
+    }
+
+    msal_client = build_msal_app()
+
+    # 4. Exchange the code using the original flow context (PKCE keys are automatically handled here)
+    result = msal_client.acquire_token_by_auth_code_flow(
+        auth_code_flow=flow, auth_response=msal_auth_response
+    )
+
+    if "error" in result:
+        return (
+            jsonify(
+                {
+                    "error": result.get("error"),
+                    "description": result.get("error_description"),
+                }
+            ),
+            400,
+        )
+
+    return jsonify(
+        {
+            "user": result.get("id_token_claims"),
+            "access_token": result.get("access_token"),
+            "refresh_token": result.get("refresh_token"),
+        }
+    )
 
 
 # After Entra ID, does a callback function
-@auth_bp.route("/api/v1/auth/callback/", methods=["GET"])
+@auth_bp.route("/auth/callback/", methods=["GET"])
 def entra_callback():
 
     if "error" in request.args:
@@ -133,6 +195,7 @@ def entra_callback():
         )
 
     session["user"] = result.get("id_token_claims")
+    session["access_token"] = result.get("access_token")
 
     return jsonify(
         {
@@ -144,7 +207,7 @@ def entra_callback():
 
 
 # Register student
-@auth_bp.route("/api/v1/auth/register", methods=["POST"])
+@auth_bp.route("/auth/register", methods=["POST"])
 def register_student():
     response = request.get_json(silent=True)
 
@@ -229,7 +292,7 @@ def register_student():
 
 
 # Login student
-@auth_bp.route("/api/v1/login", methods=["POST"])
+@auth_bp.route("/login", methods=["POST"])
 def login():
     response = request.get_json(silent=True)
 
@@ -278,7 +341,7 @@ def login():
 # SuperAd -> SuperAd, Admin, Teacher
 # Admin -> Teacher
 # Hence, to include Bearer Token
-@auth_bp.route("/api/v1/auth/staff", methods=["POST"])
+@auth_bp.route("/auth/staff", methods=["POST"])
 def register_staff():
     response = request.get_json(silent=True)
 
