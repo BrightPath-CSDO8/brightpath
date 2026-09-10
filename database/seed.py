@@ -71,7 +71,7 @@ def seed_database():
     # --------------------------------------------------
 
     student = Student(
-        student_id_bus="STD-0001",
+        student_id_bus="STU-0001",
         user_id=student_user.user_id,
         first_name="Bob",
         last_name="Lim",

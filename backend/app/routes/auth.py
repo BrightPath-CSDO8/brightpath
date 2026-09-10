@@ -16,7 +16,7 @@ from backend.app.schemas.auth_schema import LoginRequest
 from backend.app.services.auth_service import svc_login, svc_me
 
 # Exceptions
-from backend.app.exceptions.auth import EmailAlreadyRegisteredError, AuthenticationError
+from backend.app.exceptions.auth import AuthenticationError
 
 # Utils
 from backend.app.utils.auth import login_required, role_required
@@ -31,7 +31,6 @@ def test_student():
     return jsonify({"message": "Student access granted"}), 200
 
 
-# AUTH ME
 # use this endpoint if users refreshes the page
 @auth_bp.route("/auth/me", methods=["GET"])
 def auth_me():
@@ -166,8 +165,3 @@ def logout():
     session.clear()
 
     return jsonify({"message": "Logout successfully"}), 200
-
-
-# Register for SuperAdmins, Admins, Teachers
-# SuperAd -> SuperAd, Admin, Teacher
-# Admin -> Teacher

@@ -10,18 +10,40 @@ from database.models import Student
 from backend.app.schemas.user_schema import (
     StudentCreate,
     StudentRegistrationResponse,
+    StudentProfileRequest,
+    LoginStudentResponse,
+    StudentProfile,
 )
 
 # Service
-from backend.app.services.user_service import svc_register_student
+from backend.app.services.user_service import (
+    svc_register_student,
+    svc_update_student_profile,
+)
 
 # Exceptions
-from backend.app.exceptions.auth import EmailAlreadyRegisteredError, AuthenticationError
+from backend.app.exceptions.auth import (
+    EmailAlreadyRegisteredError,
+    AuthenticationError,
+    ForbiddenError,
+)
 
 # Utils
-from backend.app.utils.auth import login_required, role_required
+from backend.app.utils.auth import (
+    login_required,
+    role_required,
+    authorize_student_access,
+)
 
 student_bp = Blueprint("student", __name__, url_prefix="/api/v1")
+
+
+@student_bp.route("/students", methods=["GET"])
+def all_students():
+    students = Student.query.all()
+    response = [StudentProfile.model_validate(student) for student in students]
+
+    return jsonify([student.model_dump(mode="json") for student in response]), 200
 
 
 # Register student (a public route)
@@ -96,7 +118,112 @@ def register_student():
     return jsonify(student_response.model_dump(mode="json")), 201
 
 
-# Update Student Profile (auth route)
-@student_bp.route("/student", methods=["PATCH"])
-def patch_student():
-    pass
+@student_bp.route("/student/<string:student_id_bus>", methods=["GET"])
+@login_required
+@role_required("STUDENT", "ADMIN")
+def get_one_student(student_id_bus):
+    student = Student.query.filter_by(student_id_bus=student_id_bus).first()
+    if student is None:
+        return (
+            jsonify(
+                {
+                    "error": "Not found.",
+                    "message": "Student not found.",
+                }
+            ),
+            404,
+        )
+
+    try:
+        authorize_student_access(student)
+
+    except ForbiddenError as e:
+        return (
+            jsonify(
+                {
+                    "error": "Forbidden.",
+                    "message": str(e),
+                }
+            ),
+            403,
+        )
+    student_profile = StudentProfile.model_validate(student)
+    return jsonify(student_profile.model_dump(mode="json")), 200
+
+
+## UPDATE STUDENT PROFLE
+@student_bp.route("/student/<string:student_id_bus>", methods=["PATCH"])
+@login_required
+@role_required("STUDENT")
+def update_student(student_id_bus):
+    # Find target student
+    student = Student.query.filter_by(student_id_bus=student_id_bus).first()
+    if student is None:
+        return (
+            jsonify(
+                {
+                    "error": "Not found.",
+                    "message": "Student not found.",
+                }
+            ),
+            404,
+        )
+
+    try:
+        authorize_student_access(student)
+
+    except ForbiddenError as e:
+        return (
+            jsonify(
+                {
+                    "error": "Forbidden.",
+                    "message": str(e),
+                }
+            ),
+            403,
+        )
+
+    response = request.get_json(silent=True)
+
+    # check if request body is supplied
+    if not response:
+        return (
+            jsonify({"error": "Bad request.", "message": "Request body is required"}),
+            400,
+        )
+
+    try:
+        patch_request = StudentProfileRequest.model_validate(response)
+
+    except ValidationError as e:
+        details = {}
+
+        for error in e.errors():
+            field = error["loc"][0] if error["loc"] else "course"
+            details[field] = error["msg"]
+        return (
+            jsonify(
+                {
+                    "error": "Bad request.",
+                    "message": "Invalid request body.",
+                    "details": details,
+                }
+            ),
+            400,
+        )
+    update_data = patch_request.model_dump(exclude_unset=True)
+
+    student = svc_update_student_profile(student_id_bus, update_data)
+
+    return (
+        jsonify(
+            {
+                "student_id_bus": student.student_id_bus,
+                "first_name": student.first_name,
+                "last_name": student.last_name,
+                "mobile": student.mobile,
+                "dob": student.dob.isoformat(),
+            }
+        ),
+        200,
+    )

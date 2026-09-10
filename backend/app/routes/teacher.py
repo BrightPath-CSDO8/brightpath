@@ -1,32 +1,49 @@
-from flask import Blueprint, request, jsonify, session
+from flask import Blueprint, request, jsonify
 
 from sqlalchemy.exc import IntegrityError
 from backend.app.extensions import db
 from pydantic import ValidationError
 
-from database.models import Student
+from database.models import Teacher
+
+# Service
+from backend.app.services.user_service import svc_register_teacher, svc_update_teacher
 
 # Schemas
 from backend.app.schemas.user_schema import (
-    StudentCreate,
-    StudentRegistrationResponse,
+    TeacherCreate,
+    TeacherRegistrationResponse,
+    TeacherProfileRequest,
+    TeacherProfile,
 )
 
-# Service
-from backend.app.services.user_service import svc_register_student
-
 # Exceptions
-from backend.app.exceptions.auth import EmailAlreadyRegisteredError, AuthenticationError
+from backend.app.exceptions.auth import EmailAlreadyRegisteredError, ForbiddenError
 
 # Utils
-from backend.app.utils.auth import login_required, role_required
+from backend.app.utils.auth import (
+    login_required,
+    role_required,
+    authorize_teacher_access,
+)
 
 teacher_bp = Blueprint("teacher", __name__, url_prefix="/api/v1")
 
 
-# Register teacher (a Admin/SuperAdmin AUTH route)
-@teacher_bp.route("/auth/register", methods=["POST"])
-def register_student():
+@teacher_bp.route("/teachers", methods=["GET"])
+def all_teachers():
+    teachers = Teacher.query.all()
+
+    response = [TeacherProfile.model_validate(teacher) for teacher in teachers]
+
+    return jsonify([teacher.model_dump(mode="json") for teacher in response]), 200
+
+
+# Register teacher (Admin/SuperAdmin AUTH route)
+@teacher_bp.route("/auth/staff/register", methods=["POST"])
+@login_required
+@role_required("ADMIN")
+def register_teacher():
     response = request.get_json(silent=True)
 
     if not response:
@@ -36,7 +53,7 @@ def register_student():
         )
 
     try:
-        student_data = StudentCreate.model_validate(response)
+        teacher_data = TeacherCreate.model_validate(response)
 
     except ValidationError as e:
         details = {}
@@ -57,7 +74,7 @@ def register_student():
         )
     # 2. Perform registration operation
     try:
-        user, student = svc_register_student(student_data)
+        user, teacher = svc_register_teacher(teacher_data)
     except EmailAlreadyRegisteredError as e:
         return (
             jsonify(
@@ -85,18 +102,93 @@ def register_student():
             jsonify(
                 {
                     "error": "Internal server error.",
-                    "message": "Student registration failed.",
+                    "message": "Teacher registration failed.",
                 }
             ),
             500,
         )
 
-    student_response = StudentRegistrationResponse(user=user, student=student)
+    teacher_response = TeacherRegistrationResponse(user=user, teacher=teacher)
+    return jsonify(teacher_response.model_dump(mode="json")), 201
 
-    return jsonify(student_response.model_dump(mode="json")), 201
+
+# Update Teacher Profile (AUTH teacher/admin route)
+@teacher_bp.route("/teacher/<string:teacher_id_bus>", methods=["PATCH"])
+@login_required
+@role_required("TEACHER", "ADMIN")
+def update_teacher(teacher_id_bus):
+
+    teacher = Teacher.query.filter_by(teacher_id_bus=teacher_id_bus).first()
+    if teacher is None:
+        return (
+            jsonify(
+                {
+                    "error": "Not found.",
+                    "message": "Teacher not found.",
+                }
+            ),
+            404,
+        )
+
+    try:
+        authorize_teacher_access(teacher)
+
+    except ForbiddenError as e:
+        return (
+            jsonify(
+                {
+                    "error": "Forbidden.",
+                    "message": str(e),
+                }
+            ),
+            403,
+        )
+
+    response = request.get_json(silent=True)
+
+    # check if request body is supplied
+    if not response:
+        return (
+            jsonify({"error": "Bad request.", "message": "Request body is required"}),
+            400,
+        )
+
+    try:
+        patch_request = TeacherProfileRequest.model_validate(response)
+
+    except ValidationError as e:
+        details = {}
+
+        for error in e.errors():
+            field = error["loc"][0] if error["loc"] else "course"
+            details[field] = error["msg"]
+        return (
+            jsonify(
+                {
+                    "error": "Bad request.",
+                    "message": "Invalid request body.",
+                    "details": details,
+                }
+            ),
+            400,
+        )
+    update_data = patch_request.model_dump(exclude_unset=True)
+
+    teacher = svc_update_teacher(teacher_id_bus, update_data)
+
+    return (
+        jsonify(
+            {
+                "teacher_id_bus": teacher.teacher_id_bus,
+                "salutation": teacher.salutation,
+                "first_name": teacher.first_name,
+                "last_name": teacher.last_name,
+                "mobile": teacher.mobile,
+                "status": teacher.status,
+            }
+        ),
+        200,
+    )
 
 
-# Update Teacher Profile (auth route)
-@teacher_bp.route("/teacher", methods=["PATCH"])
-def patch_teacher():
-    pass
+# Password reset
