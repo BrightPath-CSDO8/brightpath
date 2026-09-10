@@ -10,10 +10,15 @@ from backend.app.schemas.classroom_schema import ClassroomCreate, AllClassrooms
 # Service
 from backend.app.services.classroom_service import svc_create_classroom
 
+# Utils
+from backend.app.utils.auth import login_required, role_required
+
 classroom_bp = Blueprint("classroom", __name__)
 
 
 @classroom_bp.route("/api/v1/classrooms", methods=["GET"])
+# @login_required()
+# @role_required("ADMIN", "SUPERADMIN")
 def get_all_classrooms():
     classrooms = Classroom.query.all()
 
@@ -23,6 +28,8 @@ def get_all_classrooms():
 
 
 @classroom_bp.route("/api/v1/classroom", methods=["POST"])
+# @login_required()
+# @role_required("ADMIN", "SUPERADMIN")
 def create_classroom():
     response = request.get_json(silent=True)
 

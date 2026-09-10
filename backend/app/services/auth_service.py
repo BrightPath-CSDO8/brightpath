@@ -1,7 +1,5 @@
 from backend.app.extensions import db
-
-# from app.models.users import User, Student
-from database.models import Users, Student
+from database.models import Users, Student, Teacher
 
 # Utils
 from backend.app.utils.password import verify_hash_password
@@ -21,4 +19,21 @@ def svc_login(data):
     if not verified_password:
         raise AuthenticationError("Invalid email and/or password.")
 
-    return user
+    # Student profile lookup
+    if user.role == "STUDENT":
+        student = Student.query.filter_by(user_id=user.user_id).first()
+
+        if not student:
+            raise AuthenticationError("Student profile not found.")
+        return user, student
+
+    # Teacher profile lookup
+
+    # if user.role == "TEACHER":
+    #     teacher = Teacher.query.filter_by(user_id=user.user_id).first()
+
+    #     if not teacher:
+    #         raise AuthenticationError("Teacher profile not found.")
+    #     return user, None, teacher
+
+    return user, student

@@ -1,10 +1,7 @@
-# Handles Business Logics
-
 from backend.app.extensions import db
 from sqlalchemy.exc import IntegrityError
 
 # Models
-# from app.models.users import User, Student
 from database.models import Users, Student
 
 # Utils
@@ -31,6 +28,9 @@ def svc_register_student(data):
             role="STUDENT",
         )
 
+        db.session.add(user)
+        db.session.flush()
+
         # Then create a Student record
         student = Student(
             student_id_bus=generate_business_id("STU"),
@@ -38,15 +38,15 @@ def svc_register_student(data):
             last_name=data.last_name,
             mobile=data.mobile,
             dob=data.dob,
-            user=user,
+            user_id=user.user_id,
+            status="ACTIVE",
         )
 
-        db.session.add(user)
         db.session.add(student)
 
         db.session.commit()
 
-        return student
+        return user, student
 
     except IntegrityError:
         db.session.rollback()

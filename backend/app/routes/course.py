@@ -15,11 +15,14 @@ from backend.app.schemas.course_schema import (
 # Service
 from backend.app.services.course_service import svc_update_course, svc_create_course
 
-course_bp = Blueprint("course", __name__)
+# Utils
+from backend.app.utils.auth import login_required, role_required
+
+course_bp = Blueprint("course", __name__, url_prefix="/api/v1")
 
 
 # GET AVAILABLE COURSES
-@course_bp.route("/api/v1/courses", methods=["GET"])
+@course_bp.route("/courses", methods=["GET"])
 def get_courses():
     courses = Course.query.all()
 
@@ -32,7 +35,7 @@ def get_courses():
 
 
 # GET INDIV COURSE
-@course_bp.route("/api/v1/courses/<string:course_id_bus>", methods=["GET"])
+@course_bp.route("/courses/<string:course_id_bus>", methods=["GET"])
 def get_one_course(course_id_bus):
     course = Course.query.filter_by(course_id_bus=course_id_bus).first()
 
@@ -47,7 +50,9 @@ def get_one_course(course_id_bus):
 
 
 # CREATE COURSE
-@course_bp.route("/api/v1/courses", methods=["POST"])
+@course_bp.route("/courses", methods=["POST"])
+@login_required
+@role_required("ADMIN", "SUPERADMIN")
 def create_course():
     response = request.get_json(silent=True)
 
@@ -113,7 +118,9 @@ def create_course():
 
 
 # UPDATE A COURSE
-@course_bp.route("/api/v1/courses/<string:course_id_bus>", methods=["PATCH"])
+@course_bp.route("/courses/<string:course_id_bus>", methods=["PATCH"])
+@login_required
+@role_required("ADMIN", "SUPERADMIN")
 def update_course(course_id_bus):
     response = request.get_json(silent=True)
 

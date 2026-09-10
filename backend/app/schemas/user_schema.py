@@ -10,6 +10,12 @@ class UserRole(str, Enum):
     TEACHER = "TEACHER"
 
 
+class UserResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+    email: EmailStr
+    role: UserRole
+
+
 class StudentCreate(BaseModel):
     email: EmailStr
     password: str
@@ -24,9 +30,36 @@ class StudentResponse(BaseModel):
     student_id_bus: str
     first_name: str
     last_name: str
-    mobile: str
-    dob: date
-    role: UserRole
+    status: str
+    mobile: str | None = None
+    dob: date | None = None
+
+
+class StudentRegistrationResponse(BaseModel):
+    user: UserResponse
+    student: StudentResponse
+
+
+class LoginStudentResponse(BaseModel):
+    user: UserResponse
+    student: StudentResponse | None = None
+    teacher: TeacherResponse | None = None
+
+
+# TEACHER
+
+
+class TeacherResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+    teacher_id_bus: str
+    salutation: str
+    first_name: str
+    last_name: str
+
+
+class LoginTeacherResponse(BaseModel):
+    user: UserResponse
+    teacher: TeacherResponse
 
 
 class StaffCreate(BaseModel):
