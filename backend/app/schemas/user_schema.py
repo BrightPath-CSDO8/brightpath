@@ -16,6 +16,9 @@ class UserResponse(BaseModel):
     role: UserRole
 
 
+#### STUDENT
+
+
 class StudentCreate(BaseModel):
     email: EmailStr
     password: str
@@ -25,7 +28,7 @@ class StudentCreate(BaseModel):
     dob: date
 
 
-class StudentResponse(BaseModel):
+class StudentProfile(BaseModel):
     model_config = ConfigDict(from_attributes=True)
     student_id_bus: str
     first_name: str
@@ -37,32 +40,47 @@ class StudentResponse(BaseModel):
 
 class StudentRegistrationResponse(BaseModel):
     user: UserResponse
-    student: StudentResponse
+    student: StudentProfile
 
 
 class LoginStudentResponse(BaseModel):
     user: UserResponse
-    student: StudentResponse | None = None
-    teacher: TeacherResponse | None = None
+    student: StudentProfile
 
 
-# TEACHER
+###### TEACHER
 
 
-class TeacherResponse(BaseModel):
+class TeacherRegistrationResponse(BaseModel):
+    user: UserResponse
+
+
+class TeacherProfile(BaseModel):
     model_config = ConfigDict(from_attributes=True)
     teacher_id_bus: str
     salutation: str
     first_name: str
     last_name: str
+    mobile: str
+    status: str
 
 
 class LoginTeacherResponse(BaseModel):
     user: UserResponse
-    teacher: TeacherResponse
+    teacher: TeacherProfile
 
 
-class StaffCreate(BaseModel):
-    email: EmailStr
-    password: str
-    role: UserRole
+###### ADMIN
+class AdminProfile(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+    first_name: str
+    last_name: str
+
+
+class LoginAdminResponse(BaseModel):
+    user: UserResponse
+    admin: AdminProfile
+
+
+###### SUPERADMIN
+#
