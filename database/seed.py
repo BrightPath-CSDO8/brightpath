@@ -1,4 +1,5 @@
 from backend.app.extensions import db
+from backend.app.utils.password import hash_password
 from database.models import (
     Users,
     Student,
@@ -12,6 +13,8 @@ from database.models import (
 )
 from datetime import date
 
+# Utils
+
 
 def seed_database():
     # --------------------------------------------------
@@ -22,18 +25,21 @@ def seed_database():
         entra_object_id=None,
         email="teacher-dev@example.com",
         role="TEACHER",
+        password_hash=hash_password("teacher123"),
     )
 
     student_user = Users(
         entra_object_id=None,
         email="student-dev@example.com",
         role="STUDENT",
+        password_hash=hash_password("student123"),
     )
 
     admin_user = Users(
         entra_object_id=None,
         email="admin-dev@example.com",
         role="ADMIN",
+        password_hash=hash_password("admin123"),
     )
 
     db.session.add_all(

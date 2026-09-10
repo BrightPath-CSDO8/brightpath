@@ -15,6 +15,8 @@ class Users(db.Model):
 
     role = db.Column(db.String(20), nullable=False)
 
+    password_hash = db.Column(db.String(255), nullable=False)
+
     created_at = db.Column(db.DateTime, nullable=False, server_default=db.func.now())
 
 
