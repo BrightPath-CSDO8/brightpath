@@ -3,6 +3,7 @@ from flask import Blueprint, request, jsonify, session
 from sqlalchemy.exc import IntegrityError
 from backend.app.extensions import db
 from pydantic import ValidationError
+from database.models import Users
 
 # Schemas
 from backend.app.schemas.user_schema import (
@@ -11,6 +12,7 @@ from backend.app.schemas.user_schema import (
     LoginAdminResponse,
 )
 from backend.app.schemas.auth_schema import LoginRequest
+from backend.app.schemas.user_schema import User
 
 # Service
 from backend.app.services.auth_service import svc_login, svc_me
@@ -29,6 +31,14 @@ auth_bp = Blueprint("auth", __name__, url_prefix="/api/v1")
 @role_required("STUDENT")
 def test_student():
     return jsonify({"message": "Student access granted"}), 200
+
+
+@auth_bp.route("/users", methods=["GET"])
+def all_users():
+    all_users = Users.query.all()
+    response = [User.model_validate(user) for user in all_users]
+
+    return jsonify([user.model_dump(mode="json") for user in response]), 200
 
 
 # use this endpoint if users refreshes the page

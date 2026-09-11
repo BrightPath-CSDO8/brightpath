@@ -8,3 +8,11 @@ class AuthenticationError(Exception):
 
 class ForbiddenError(Exception):
     pass
+
+
+class NotFoundError(Exception):
+    pass
+
+
+class DuplicateError(Exception):
+    pass

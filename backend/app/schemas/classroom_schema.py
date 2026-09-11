@@ -8,6 +8,6 @@ class ClassroomCreate(BaseModel):
 
 class AllClassrooms(BaseModel):
     model_config = ConfigDict(from_attributes=True)
-    id: int
+    classroom_id: int
     room_name: str
     class_capacity: int

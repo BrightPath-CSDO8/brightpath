@@ -18,6 +18,14 @@ class Salutation(str, Enum):
     DR = "Dr"
 
 
+## For internal use only
+class User(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+    user_id: int
+    email: EmailStr
+    role: UserRole
+
+
 class UserResponse(BaseModel):
     model_config = ConfigDict(from_attributes=True)
     email: EmailStr
@@ -81,6 +89,7 @@ class TeacherRegistrationResponse(BaseModel):
 
 class TeacherProfile(BaseModel):
     model_config = ConfigDict(from_attributes=True)
+    teacher_id: int
     teacher_id_bus: str
     salutation: str
     first_name: str

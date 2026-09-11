@@ -22,6 +22,7 @@ def create_app():
     from backend.app.routes.teacher import teacher_bp
     from backend.app.routes.student import student_bp
     from backend.app.routes.admin import admin_bp
+    from backend.app.routes.enrolment import enrol_bp
 
     with app.app_context():
         db.create_all()
@@ -32,5 +33,6 @@ def create_app():
     app.register_blueprint(teacher_bp)
     app.register_blueprint(student_bp)
     app.register_blueprint(admin_bp)
+    app.register_blueprint(enrol_bp)
 
     return app

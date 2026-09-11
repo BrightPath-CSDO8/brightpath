@@ -193,7 +193,7 @@ def seed_database():
         enrolment_id_bus="ENR-0001",
         student_id=student.student_id,
         course_id=course1.course_id,
-        status="APPROVED",
+        status="CONFIRMED",
     )
 
     db.session.add(enrolment)

@@ -1,7 +1,6 @@
 from flask import Blueprint, request, jsonify
 from pydantic import ValidationError
 
-# from app.models.course import Course
 from database.models import Course
 
 # Schemas
@@ -21,9 +20,22 @@ from backend.app.utils.auth import login_required, role_required
 course_bp = Blueprint("course", __name__, url_prefix="/api/v1")
 
 
-# GET AVAILABLE COURSES
+# GET AVAILABLE/OPEN COURSES
 @course_bp.route("/courses", methods=["GET"])
 def get_courses():
+    courses = Course.query.all()
+
+    # This would be main endpoint for Public & Students
+    courses = Course.query.filter_by(status=CourseStatus.OPEN).all()
+
+    response = [CourseResponse.model_validate(course) for course in courses]
+
+    return jsonify([course.model_dump(mode="json") for course in response]), 200
+
+
+# GET ALL COURSES - for ADMINS only
+@course_bp.route("/auth/courses", methods=["GET"])
+def admin_get_courses():
     courses = Course.query.all()
 
     # This would be main endpoint for Public & Students
@@ -135,12 +147,6 @@ def update_course(course_id_bus):
         patch_request = CoursePatchRequest.model_validate(response)
 
     except ValidationError as e:
-        print("============================")
-        print("ERROR:", e)
-        print("ERRORS: ", e.errors())
-        print("JSON: ", e.json())
-        print("============================")
-
         details = {}
 
         for error in e.errors():

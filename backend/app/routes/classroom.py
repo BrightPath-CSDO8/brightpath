@@ -24,7 +24,7 @@ def get_all_classrooms():
 
     response = [AllClassrooms.model_validate(classrooms) for classrooms in classrooms]
 
-    return jsonify([c.model_dump(mode="json") for c in response]), 200
+    return jsonify([classroom.model_dump(mode="json") for classroom in response]), 200
 
 
 @classroom_bp.route("/api/v1/classroom", methods=["POST"])

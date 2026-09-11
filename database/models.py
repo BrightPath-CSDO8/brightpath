@@ -139,6 +139,7 @@ class Enrolment(db.Model):
 
     course_id = db.Column(db.Integer, db.ForeignKey("Course.course_id"), nullable=False)
 
+    # enrolment_date = db.Column(db.Date, nullable=False)
     enrolment_date = db.Column(
         db.DateTime, nullable=False, server_default=db.func.now()
     )
