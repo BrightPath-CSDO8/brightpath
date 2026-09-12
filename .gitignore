@@ -1,27 +1,22 @@
-# Python virtual environment
+# Python virtual environments
 backend/.venv/
+myenv/
+venv/
+.venv/
 
-# Environment variables
+# Environment variables / secrets
 .env
-*.env 
+*.env
 
 # Python cache
 __pycache__/
 *.pyc
 *.py[cod]
 
-.DS_Store
-
-# SQLite database
+# SQLite / local database files
 backend/instance/
-# Database local test files
 database/instance/
 *.db
 
-# Environment variables / secrets
-.env
-
-# Virtual environments
-myenv/
-venv/
-.venv/
+# macOS files
+.DS_Store
