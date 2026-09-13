@@ -27,6 +27,8 @@ enrol_bp = Blueprint("enrol", __name__, url_prefix="/api/v1")
 
 
 # ALL ENROLMENTS (for ADMINS only)
+# TODO: Search by Stu-ID
+# TODO: Search by Course-ID
 @enrol_bp.route("/auth/enrolments", methods=["GET"])
 def admin_enrolments():
     try:

@@ -90,8 +90,6 @@ def create_admin():
             409,
         )
     except Exception as e:
-        print("Registration failed:", e)
-
         return (
             jsonify(
                 {

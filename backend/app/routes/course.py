@@ -8,7 +8,7 @@ from backend.app.schemas.course_schema import (
     CoursePatchRequest,
     CourseCreate,
     CourseResponse,
-    CourseStatus,
+    CourseStatusEnum,
 )
 
 # Service
@@ -26,7 +26,7 @@ def get_courses():
     courses = Course.query.all()
 
     # This would be main endpoint for Public & Students
-    courses = Course.query.filter_by(status=CourseStatus.OPEN).all()
+    courses = Course.query.filter_by(status=CourseStatusEnum.OPEN).all()
 
     response = [CourseResponse.model_validate(course) for course in courses]
 
@@ -39,7 +39,7 @@ def admin_get_courses():
     courses = Course.query.all()
 
     # This would be main endpoint for Public & Students
-    # courses = Course.query.filter_by(status=CourseStatus.OPEN).all()
+    # courses = Course.query.filter_by(status=CourseStatusEnum.OPEN).all()
 
     response = [CourseResponse.model_validate(course) for course in courses]
 

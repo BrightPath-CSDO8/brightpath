@@ -5,7 +5,7 @@ from enum import Enum
 from pydantic import BaseModel, ConfigDict, Field, model_validator, field_validator
 
 
-class CourseStatus(str, Enum):
+class CourseStatusEnum(str, Enum):
     OPEN = "OPEN"
     CLOSED = "CLOSED"
     INACTIVE = "INACTIVE"
@@ -26,7 +26,7 @@ class CourseResponse(BaseModel):
     # classroom: str | None
     teacher_id: int
     classroom_id: int
-    status: CourseStatus
+    status: CourseStatusEnum
 
     # @field_validator("classroom", mode="before")
     # @classmethod
@@ -69,5 +69,5 @@ class CoursePatchRequest(BaseModel):
     end_date: date | None = None
     capacity: int | None = None
     classroom_id: int | None = None
-    status: CourseStatus | None = None
+    status: CourseStatusEnum | None = None
     teacher_id: int | None = None

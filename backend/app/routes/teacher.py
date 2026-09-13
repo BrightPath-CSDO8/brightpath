@@ -8,6 +8,11 @@ from database.models import Teacher
 
 # Service
 from backend.app.services.user_service import svc_register_teacher, svc_update_teacher
+from backend.app.services.teacher_service import (
+    svc_teacher_courses,
+    svc_teacher_students,
+    svc_bulk_attendance,
+)
 
 # Schemas
 from backend.app.schemas.user_schema import (
@@ -18,13 +23,18 @@ from backend.app.schemas.user_schema import (
 )
 
 # Exceptions
-from backend.app.exceptions.auth import EmailAlreadyRegisteredError, ForbiddenError
+from backend.app.exceptions.auth import (
+    EmailAlreadyRegisteredError,
+    ForbiddenError,
+    NotFoundError,
+)
 
 # Utils
 from backend.app.utils.auth import (
     login_required,
     role_required,
     authorize_teacher_access,
+    get_current_user,
 )
 
 teacher_bp = Blueprint("teacher", __name__, url_prefix="/api/v1")
@@ -96,7 +106,6 @@ def register_teacher():
             409,
         )
     except Exception as e:
-        print("Registration failed:", e)
 
         return (
             jsonify(
@@ -192,3 +201,65 @@ def update_teacher(teacher_id_bus):
 
 
 # Password reset
+
+
+# Assigned Courses
+@teacher_bp.route("/teacher/courses", methods=["GET"])
+@login_required
+@role_required("TEACHER")
+def get_teacher_courses():
+    try:
+        current_user = get_current_user()
+        teacher_courses = svc_teacher_courses(user_id=current_user.user_id)
+    except NotFoundError as e:
+        return (
+            jsonify(
+                {
+                    "error": "Forbidden.",
+                    "message": str(e),
+                }
+            ),
+            403,
+        )
+
+    return jsonify([course.model_dump(mode="json") for course in teacher_courses]), 200
+
+
+# View students in each assigned courses
+@teacher_bp.route("/teacher/<string:course_id_bus>/students", methods=["GET"])
+@login_required
+@role_required("TEACHER")
+def course_students(course_id_bus):
+    try:
+        current_user = get_current_user()
+        all_students = svc_teacher_students(
+            user_id=current_user.user_id, course_id_bus=course_id_bus
+        )
+    except ForbiddenError as e:
+        return (
+            jsonify(
+                {
+                    "error": "Forbidden.",
+                    "message": str(e),
+                }
+            ),
+            403,
+        )
+
+    return (
+        jsonify([student.model_dump(mode="json") for student in all_students]),
+        200,
+    )
+
+
+# Submit attendance of each student in course (BULK)
+@teacher_bp.route("/teacher/<string:course_id_bus>/attendance", methods=["POST"])
+@login_required
+@role_required("TEACHER")
+def students_attendance(course_id_bus):
+    response = request.get_json(silent=True)
+    current_user = get_current_user()
+    attendance_update = svc_bulk_attendance(
+        user_id=current_user.user_id, course_id_bus=course_id_bus, data=response
+    )
+    pass
