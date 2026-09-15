@@ -17,14 +17,14 @@ class CourseResponse(BaseModel):
 
     course_id_bus: str
     course_name: str
-    course_fee: Decimal
+    course_fee: float
     description: str
     schedule: str
     start_date: date
     end_date: date
     capacity: int
     # classroom: str | None
-    teacher_id: int
+    teacher_id_bus: str
     classroom_id: int
     status: CourseStatusEnum
 
@@ -46,7 +46,13 @@ class CourseCreate(BaseModel):
     end_date: date
     capacity: int
     classroom_id: int
-    teacher_id: int
+    teacher_id_bus: str
+
+    @model_validator(mode="after")
+    def check_capacity(self):
+        if self.capacity <= 0:
+            raise ValueError("Class size must be greater than 0.")
+        return self
 
     @model_validator(mode="after")
     def check_course_date(self):
@@ -70,4 +76,20 @@ class CoursePatchRequest(BaseModel):
     capacity: int | None = None
     classroom_id: int | None = None
     status: CourseStatusEnum | None = None
-    teacher_id: int | None = None
+    teacher_id_bus: str | None = None
+
+    @model_validator(mode="after")
+    def check_capacity(self):
+        if self.capacity is not None and self.capacity <= 0:
+            raise ValueError("Class size must be greater than 0.")
+        return self
+
+    @model_validator(mode="after")
+    def check_course_date(self):
+        if (
+            self.start_date is not None
+            and self.end_date is not None
+            and self.start_date >= self.end_date
+        ):
+            raise ValueError("End date must be after start date.")
+        return self

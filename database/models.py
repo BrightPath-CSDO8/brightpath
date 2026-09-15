@@ -124,6 +124,7 @@ class Course(db.Model):
     classroom_id = db.Column(
         db.Integer, db.ForeignKey("Classroom.classroom_id"), nullable=False
     )
+    teacher = db.relationship("Teacher")
 
 
 class Enrolment(db.Model):

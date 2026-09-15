@@ -12,10 +12,18 @@ from backend.app.schemas.course_schema import (
 )
 
 # Service
-from backend.app.services.course_service import svc_update_course, svc_create_course
+from backend.app.services.course_service import (
+    svc_update_course,
+    svc_create_course,
+    svc_get_public_courses,
+    svc_get_admin_courses,
+    svc_get_one_course,
+)
 
 # Utils
 from backend.app.utils.auth import login_required, role_required
+
+from backend.app.exceptions.auth import NotFoundError
 
 course_bp = Blueprint("course", __name__, url_prefix="/api/v1")
 
@@ -23,48 +31,43 @@ course_bp = Blueprint("course", __name__, url_prefix="/api/v1")
 # GET AVAILABLE/OPEN COURSES
 @course_bp.route("/courses", methods=["GET"])
 def get_courses():
-    courses = Course.query.all()
+    courses = svc_get_public_courses()
 
-    # This would be main endpoint for Public & Students
-    courses = Course.query.filter_by(status=CourseStatusEnum.OPEN).all()
-
-    response = [CourseResponse.model_validate(course) for course in courses]
-
-    return jsonify([course.model_dump(mode="json") for course in response]), 200
+    return jsonify([course.model_dump(mode="json") for course in courses]), 200
 
 
 # GET ALL COURSES - for ADMINS only
 @course_bp.route("/auth/courses", methods=["GET"])
 def admin_get_courses():
-    courses = Course.query.all()
+    courses = svc_get_admin_courses()
 
-    # This would be main endpoint for Public & Students
-    # courses = Course.query.filter_by(status=CourseStatusEnum.OPEN).all()
-
-    response = [CourseResponse.model_validate(course) for course in courses]
-
-    return jsonify([course.model_dump(mode="json") for course in response]), 200
+    return jsonify([course.model_dump(mode="json") for course in courses]), 200
 
 
 # GET INDIV COURSE
 @course_bp.route("/courses/<string:course_id_bus>", methods=["GET"])
 def get_one_course(course_id_bus):
-    course = Course.query.filter_by(course_id_bus=course_id_bus).first()
+    try:
+        course = svc_get_one_course(course_id_bus)
 
-    if course is None:
+    except NotFoundError as e:
         return (
-            jsonify({"error": "Bad request.", "message": "Course not found"}),
+            jsonify(
+                {
+                    "error": "Not Found.",
+                    "message": str(e),
+                }
+            ),
             404,
         )
-    course_response = CourseResponse.model_validate(course)
 
-    return jsonify(course_response.model_dump(mode="json")), 200
+    return jsonify(course.model_dump(mode="json")), 200
 
 
 # CREATE COURSE
 @course_bp.route("/courses", methods=["POST"])
 @login_required
-@role_required("ADMIN", "SUPERADMIN")
+@role_required("ADMIN")
 def create_course():
     response = request.get_json(silent=True)
 
@@ -80,17 +83,14 @@ def create_course():
         create_course_req = CourseCreate.model_validate(response)
 
     except ValidationError as e:
-        print("============================")
-        print("ERROR:", e)
-        print("ERRORS: ", e.errors())
-        print("JSON: ", e.json())
-        print("============================")
-
         details = {}
 
         for error in e.errors():
             field = error["loc"][0] if error["loc"] else "course"
-            details[field] = error["msg"]
+            if error["type"] == "date_parsing":
+                details[field] = "Please provide a valid date."
+            else:
+                details[field] = error["msg"]
 
         return (
             jsonify(
@@ -102,46 +102,42 @@ def create_course():
             ),
             400,
         )
-    course_req = create_course_req.model_dump(exclude_unset=True)
+    try:
+        course = svc_create_course(create_course_req)
+    except NotFoundError as e:
+        print(f"e: {e}")
+        return (
+            jsonify(
+                {
+                    "error": "Not Found.",
+                    "message": str(e),
+                }
+            ),
+            404,
+        )
 
-    course = svc_create_course(course_req)
-
-    return (
-        jsonify(
-            {
-                "course_id_bus": course.course_id_bus,
-                "course_name": course.course_name,
-                "course_fee": float(course.course_fee),
-                "description": course.description,
-                "schedule": course.schedule,
-                # "classroom": course.classroom.room_name if course.classroom else None,
-                "classroom_id": course.classroom_id,
-                "teacher_id": course.teacher_id,
-                "start_date": (
-                    course.start_date.isoformat() if course.start_date else None
-                ),
-                "end_date": (course.end_date.isoformat() if course.end_date else None),
-                "status": course.status,
-                "capacity": course.capacity,
-            }
-        ),
-        201,
-    )
+    return jsonify(course.model_dump(mode="json")), 201
 
 
 # UPDATE A COURSE
 @course_bp.route("/courses/<string:course_id_bus>", methods=["PATCH"])
 @login_required
-@role_required("ADMIN", "SUPERADMIN")
+@role_required("ADMIN")
 def update_course(course_id_bus):
     response = request.get_json(silent=True)
 
-    # check if request body is supplied
+    # Check if request body is supplied
     if not response:
         return (
-            jsonify({"error": "Bad request.", "message": "Request body is required"}),
+            jsonify(
+                {
+                    "error": "Bad request.",
+                    "message": "Request body is required",
+                }
+            ),
             400,
         )
+
     # Validate request using Pydantic
     try:
         patch_request = CoursePatchRequest.model_validate(response)
@@ -151,7 +147,12 @@ def update_course(course_id_bus):
 
         for error in e.errors():
             field = error["loc"][0] if error["loc"] else "course"
-            details[field] = error["msg"]
+
+            if error["type"] == "value_error":
+                details[field] = str(error["ctx"]["error"])
+            else:
+                details[field] = error["msg"]
+
         return (
             jsonify(
                 {
@@ -162,14 +163,43 @@ def update_course(course_id_bus):
             ),
             400,
         )
+
+    # Only include fields that were actually supplied
     update_data = patch_request.model_dump(exclude_unset=True)
 
-    course = svc_update_course(course_id_bus, update_data)
+    try:
+        course = svc_update_course(course_id_bus, update_data)
 
+    except NotFoundError as e:
+        return (
+            jsonify(
+                {
+                    "error": "Not Found.",
+                    "message": str(e),
+                }
+            ),
+            404,
+        )
+
+    except ValueError as e:
+        return (
+            jsonify(
+                {
+                    "error": "Bad request.",
+                    "message": str(e),
+                }
+            ),
+            400,
+        )
+
+    # Course itself doesn't exist
     if course is None:
         return (
             jsonify(
-                {"error": "Course not found.", "message": "There is no such course"}
+                {
+                    "error": "Course not found.",
+                    "message": "There is no such course",
+                }
             ),
             404,
         )
@@ -182,9 +212,8 @@ def update_course(course_id_bus):
                 "course_fee": float(course.course_fee),
                 "description": course.description,
                 "schedule": course.schedule,
-                # "classroom": course.classroom.room_name if course.classroom else None,
                 "classroom_id": course.classroom_id,
-                "teacher_id": course.teacher_id,
+                "teacher_id_us": course.teacher.teacher_id_bus,
                 "start_date": (
                     course.start_date.isoformat() if course.start_date else None
                 ),

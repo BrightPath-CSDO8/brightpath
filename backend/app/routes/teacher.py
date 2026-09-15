@@ -70,7 +70,7 @@ def register_teacher():
 
         for error in e.errors():
             field = error["loc"][0] if error["loc"] else "request"
-            details[field] = error["msg"]
+            details[field] = error["msg"].replace("Value error, ", "")
 
         return (
             jsonify(
@@ -170,7 +170,12 @@ def update_teacher(teacher_id_bus):
 
         for error in e.errors():
             field = error["loc"][0] if error["loc"] else "course"
-            details[field] = error["msg"]
+            if error["type"] == "string_pattern_mismatch":
+                details[field] = (
+                    "Mobile number must be 8 digits long and start with 8 or 9."
+                )
+            else:
+                details[field] = error["msg"]
         return (
             jsonify(
                 {

@@ -54,7 +54,7 @@ def create_admin():
 
         for error in e.errors():
             field = error["loc"][0] if error["loc"] else "request"
-            details[field] = error["msg"]
+            details[field] = error["msg"].replace("Value error, ", "")
 
         return (
             jsonify(

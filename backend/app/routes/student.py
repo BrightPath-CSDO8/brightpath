@@ -1,4 +1,4 @@
-from flask import Blueprint, request, jsonify, session
+from flask import Blueprint, request, g, jsonify, session
 
 from sqlalchemy.exc import IntegrityError
 from backend.app.extensions import db
@@ -33,6 +33,7 @@ from backend.app.utils.auth import (
     login_required,
     role_required,
     authorize_student_access,
+    get_current_user,
 )
 
 student_bp = Blueprint("student", __name__, url_prefix="/api/v1")
@@ -65,7 +66,7 @@ def register_student():
 
         for error in e.errors():
             field = error["loc"][0] if error["loc"] else "request"
-            details[field] = error["msg"]
+            details[field] = error["msg"].replace("Value error, ", "")
 
         return (
             jsonify(
@@ -101,8 +102,6 @@ def register_student():
             409,
         )
     except Exception as e:
-        print("Registration failed:", e)
-
         return (
             jsonify(
                 {
@@ -199,8 +198,13 @@ def update_student(student_id_bus):
         details = {}
 
         for error in e.errors():
-            field = error["loc"][0] if error["loc"] else "course"
-            details[field] = error["msg"]
+            field = error["loc"][0] if error["loc"] else "request"
+            if error["type"] == "string_pattern_mismatch":
+                details[field] = (
+                    "Mobile number must be 8 digits long and start with 8 or 9."
+                )
+            else:
+                details[field] = error["msg"]
         return (
             jsonify(
                 {

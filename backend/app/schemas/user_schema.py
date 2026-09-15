@@ -36,11 +36,48 @@ class UserResponse(BaseModel):
 class StudentCreate(BaseModel):
     model_config = ConfigDict(extra="forbid")
     email: EmailStr
-    password: str
+    password: str = Field(min_length=5)
     first_name: str
     last_name: str
     mobile: str = Field(pattern=r"^[89]\d{7}$")
     dob: date
+
+    @field_validator("email")
+    @classmethod
+    def validate_emaill(cls, value):
+        if not value:
+            raise ValueError("Email cannot be empty.")
+        return value
+
+    @field_validator("password")
+    @classmethod
+    def validate_password(cls, value):
+        if not value.strip():
+            raise ValueError("Password cannot be empty.")
+        if len(value) < 5:
+            raise ValueError("Password must be at least 5 characters long.")
+        return value
+
+    @field_validator("first_name")
+    @classmethod
+    def validate_first_name(cls, value):
+        if not value.strip():
+            raise ValueError("First Name cannot be empty.")
+        return value
+
+    @field_validator("last_name")
+    @classmethod
+    def validate_last_name(cls, value):
+        if not value.strip():
+            raise ValueError("Last Name cannot be empty.")
+        return value
+
+    @field_validator("dob")
+    @classmethod
+    def validate_dob(cls, value):
+        if value >= date.today():
+            raise ValueError("Date of birth must be earlier than today.")
+        return value
 
 
 class StudentProfile(BaseModel):
@@ -68,18 +105,48 @@ class LoginStudentResponse(BaseModel):
 class StudentProfileRequest(BaseModel):
     # Disallow unknown fields from request
     model_config = ConfigDict(extra="forbid")
-    mobile: str | None = None
+    mobile: str | None = Field(default=None, pattern=r"^[89]\d{7}$")
 
 
 ###### TEACHER
 class TeacherCreate(BaseModel):
     model_config = ConfigDict(extra="forbid")
     email: EmailStr
-    password: str
+    password: str = Field(min_length=5)
     salutation: Salutation
     first_name: str
     last_name: str
-    mobile: str
+    mobile: str = Field(pattern=r"^[89]\d{7}$")
+
+    @field_validator("email")
+    @classmethod
+    def validate_email(cls, value):
+        if not value:
+            raise ValueError("Email cannot be empty.")
+        return value
+
+    @field_validator("password")
+    @classmethod
+    def validate_password(cls, value):
+        if not value.strip():
+            raise ValueError("Password cannot be empty.")
+        if len(value) < 5:
+            raise ValueError("Password must be at least 5 characters long.")
+        return value
+
+    @field_validator("first_name")
+    @classmethod
+    def validate_first_name(cls, value):
+        if not value.strip():
+            raise ValueError("First Name cannot be empty.")
+        return value
+
+    @field_validator("last_name")
+    @classmethod
+    def validate_last_name(cls, value):
+        if not value.strip():
+            raise ValueError("Last Name cannot be empty.")
+        return value
 
 
 class TeacherRegistrationResponse(BaseModel):
@@ -101,7 +168,7 @@ class TeacherProfile(BaseModel):
 class TeacherProfileRequest(BaseModel):
     model_config = ConfigDict(from_attributes=True)
     salutation: str
-    mobile: str
+    mobile: str | None = Field(default=None, pattern=r"^[89]\d{7}$")
     status: str
 
 
@@ -114,9 +181,39 @@ class LoginTeacherResponse(BaseModel):
 class AdminCreate(BaseModel):
     model_config = ConfigDict(extra="forbid")
     email: EmailStr
-    password: str
+    password: str = Field(min_length=5)
     first_name: str
     last_name: str
+
+    @field_validator("email")
+    @classmethod
+    def validate_email(cls, value):
+        if not value:
+            raise ValueError("Email cannot be empty.")
+        return value
+
+    @field_validator("password")
+    @classmethod
+    def validate_password(cls, value):
+        if not value.strip():
+            raise ValueError("Password cannot be empty.")
+        if len(value) < 5:
+            raise ValueError("Password must be at least 5 characters long.")
+        return value
+
+    @field_validator("first_name")
+    @classmethod
+    def validate_first_name(cls, value):
+        if not value.strip():
+            raise ValueError("First Name cannot be empty.")
+        return value
+
+    @field_validator("last_name")
+    @classmethod
+    def validate_last_name(cls, value):
+        if not value.strip():
+            raise ValueError("Last Name cannot be empty.")
+        return value
 
 
 class AdminCreateResponse(BaseModel):
