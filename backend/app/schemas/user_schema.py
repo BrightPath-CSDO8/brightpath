@@ -109,6 +109,19 @@ class StudentProfileRequest(BaseModel):
 
 
 ###### TEACHER
+
+
+class TeacherProfile(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+    teacher_id: int
+    teacher_id_bus: str
+    salutation: str
+    first_name: str
+    last_name: str
+    mobile: str
+    status: str
+
+
 class TeacherCreate(BaseModel):
     model_config = ConfigDict(extra="forbid")
     email: EmailStr
@@ -154,17 +167,6 @@ class TeacherRegistrationResponse(BaseModel):
     teacher: TeacherProfile
 
 
-class TeacherProfile(BaseModel):
-    model_config = ConfigDict(from_attributes=True)
-    teacher_id: int
-    teacher_id_bus: str
-    salutation: str
-    first_name: str
-    last_name: str
-    mobile: str
-    status: str
-
-
 class TeacherProfileRequest(BaseModel):
     model_config = ConfigDict(from_attributes=True)
     salutation: str
@@ -178,6 +180,12 @@ class LoginTeacherResponse(BaseModel):
 
 
 ###### ADMIN
+class AdminProfile(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+    first_name: str
+    last_name: str
+
+
 class AdminCreate(BaseModel):
     model_config = ConfigDict(extra="forbid")
     email: EmailStr
@@ -219,12 +227,6 @@ class AdminCreate(BaseModel):
 class AdminCreateResponse(BaseModel):
     user: UserResponse
     admin: AdminProfile
-
-
-class AdminProfile(BaseModel):
-    model_config = ConfigDict(from_attributes=True)
-    first_name: str
-    last_name: str
 
 
 class LoginAdminResponse(BaseModel):
