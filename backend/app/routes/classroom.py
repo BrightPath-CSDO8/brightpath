@@ -1,7 +1,6 @@
 from flask import Blueprint, request, jsonify
 from pydantic import ValidationError
 
-# from app.models.classroom import Classroom
 from database.models import Classroom
 
 # Schema

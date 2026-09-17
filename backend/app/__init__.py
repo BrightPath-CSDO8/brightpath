@@ -10,9 +10,7 @@ def create_app():
     app.config.from_object(Config)
     app.secret_key = app.config["FLASK_SECRET_KEY"]  # Required for Flask sessions
 
-    app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///edulearn.db"
-    app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
-
+    # initialized SQLAlchemy
     db.init_app(app)
 
     # Routes
@@ -24,8 +22,8 @@ def create_app():
     from backend.app.routes.admin import admin_bp
     from backend.app.routes.enrolment import enrol_bp
 
-    with app.app_context():
-        db.create_all()
+    # with app.app_context():
+    #     db.create_all()
 
     app.register_blueprint(auth_bp)
     app.register_blueprint(course_bp)
