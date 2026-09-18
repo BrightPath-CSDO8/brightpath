@@ -2,7 +2,10 @@
 .gitignore
 
 __pycache__/
-*.py[cod]
+**/__pycache__/
+**/*.pyc
+**/*.pyo
+**/*.pyd
 
 .venv/
 venv/
@@ -11,6 +14,8 @@ env/
 .env
 .env.*
 
-*.db
+instance/
+
+**/*.db
 
 README.md

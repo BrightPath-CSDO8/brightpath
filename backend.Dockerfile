@@ -11,6 +11,9 @@ RUN pip install --no-cache-dir -r backend/requirements.txt
 COPY backend/ ./backend/
 COPY database/ ./database/
 
+# CRITICAL: Tells Python to treat /app as a root lookup directory
+ENV PYTHONPATH=/app
+
 EXPOSE 5000
 
 CMD ["python", "-m", "backend.run"]

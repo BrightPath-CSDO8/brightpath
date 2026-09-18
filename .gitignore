@@ -1,14 +1,15 @@
 # Python virtual environment
 backend/.venv/
 
-# Environment variables
+# Environment variables / secrets
 .env
 *.env 
 
 # Python cache
-__pycache__/
-*.pyc
-*.py[cod]
+**/__pycache__/
+**/*.pyc
+**/*.pyo
+**/*.pyd
 
 .DS_Store
 
@@ -16,10 +17,10 @@ __pycache__/
 backend/instance/
 # Database local test files
 database/instance/
+instance/
 *.db
 
-# Environment variables / secrets
-.env
+
 
 # Virtual environments
 myenv/
