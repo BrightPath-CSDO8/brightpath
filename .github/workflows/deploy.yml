@@ -8,7 +8,6 @@ on:
   workflow_dispatch:
 
 env:
-  ACR_LOGIN_SERVER: acrbrightpathcsdo82026-gja8gteyg6d7g0fr.azurecr.io
   BACKEND_IMAGE: brightpath-backend
 
 jobs:
@@ -25,7 +24,7 @@ jobs:
       - name: Login to Azure Container Registry
         uses: docker/login-action@v4
         with:
-          registry: ${{ env.ACR_LOGIN_SERVER }}
+          registry: ${{ secrets.ACR_LOGIN_SERVER }}
           username: ${{ secrets.ACR_USERNAME }}
           password: ${{ secrets.ACR_PASSWORD }}
 
@@ -40,4 +39,17 @@ jobs:
           platforms: linux/amd64
           push: true
           tags: |
-            ${{ env.ACR_LOGIN_SERVER }}/${{ env.BACKEND_IMAGE }}:${{ github.sha }}
+            ${{ secrets.ACR_LOGIN_SERVER }}/${{ env.BACKEND_IMAGE }}:${{ github.sha }}
+
+  deploy-backend:
+    needs: build-backend
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Deploy backend image to Azure App Service
+        uses: azure/webapps-deploy@v3
+        with:
+          app-name: ${{ secrets.AZURE_BACKEND_APP_NAME }}
+          publish-profile: ${{ secrets.AZURE_BACKEND_WEBAPP_PUBLISH_PROFILE }}
+          images: |
+            ${{ secrets.ACR_LOGIN_SERVER }}/${{ env.BACKEND_IMAGE }}:${{ github.sha }}
