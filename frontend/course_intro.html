@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Course Introduction — Education Management Platform</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body>
+  <nav class="navbar navbar-light bg-light border-bottom px-3">
+    <span class="navbar-brand mb-0 h1">Education Management Platform</span>
+    <span class="text-muted">
+      Jane Tan (Student) &nbsp;|&nbsp; <a href="student_profile.html">My Profile</a> &nbsp;|&nbsp; <a href="messages.html?role=student">Messages</a> &nbsp;|&nbsp; <a href="login.html">Logout</a>
+    </span>
+  </nav>
+
+  <div class="container my-3">
+    <a href="browse_courses.html">Back to Browse Courses</a>
+  </div>
+
+  <div class="container mb-5" style="max-width: 560px;">
+    <h4 class="mb-4" id="courseTitle">Course Introduction</h4>
+
+    <!-- Teacher photo is a generated placeholder avatar (initials-based), not a real photo —
+         these are fictional demo teachers, so no real person's image is used. -->
+    <div class="d-flex align-items-center gap-3 mb-4">
+      <svg id="teacherAvatar" width="72" height="72" viewBox="0 0 72 72" style="border-radius: 50%; background: #dee2e6; flex-shrink: 0;">
+        <circle cx="36" cy="27" r="14" fill="#adb5bd"/>
+        <path d="M10 65 Q36 42 62 65 Z" fill="#adb5bd"/>
+      </svg>
+      <div>
+        <div class="fw-medium fs-5" id="teacherName"></div>
+        <div class="text-muted small" id="teacherDesignation"></div>
+      </div>
+    </div>
+
+    <p class="mb-4" id="teacherBio"></p>
+
+    <table class="table table-bordered">
+      <tbody>
+        <tr><th style="width: 40%;">Course name</th><td id="d_name"></td></tr>
+        <tr><th>Intake</th><td id="d_intake"></td></tr>
+        <tr><th>Course Date(s)</th><td id="d_dates"></td></tr>
+        <tr><th>Course Time</th><td id="d_time"></td></tr>
+        <tr><th>Class size</th><td id="d_size"></td></tr>
+        <tr><th>Fees</th><td id="d_fees"></td></tr>
+      </tbody>
+    </table>
+
+    <button class="btn btn-primary" onclick="enrolNow()">Enrol now</button>
+  </div>
+
+  <script>
+    // Restructured to match the real relational model: one Teacher record, referenced by
+    // many Course records — Mr. Lim's bio is defined once, not duplicated per course.
+    const teachers = {
+      lim: { name: 'Mr. Lim', designation: 'Senior Teacher',
+        bio: 'Mr. Lim has over 10 years of experience teaching mathematics, from foundational arithmetic through pre-calculus. He is known for breaking complex problems into simple, step-by-step approaches that build lasting confidence in his students.' },
+      rahman: { name: 'Mr. Rahman', designation: 'Teacher',
+        bio: 'Mr. Rahman specialises in secondary-level science education with a hands-on, experiment-driven approach. He is passionate about making science feel relevant and exciting through real-world examples.' },
+    };
+
+    const courses = {
+      math201: { name: 'Math 201', intake: '2026 Term 3', dates: 'Every Wed, 1 Sep – 15 Nov 2026',
+        time: '10:00–12:00', size: '22 / 25', fees: 'S$280.00', teacherKey: 'lim' },
+      science101: { name: 'Science 101', intake: '2026 Term 3', dates: 'Every Fri, 1 Sep – 15 Nov 2026',
+        time: '09:00–11:00', size: '18 / 20', fees: 'S$320.00', teacherKey: 'rahman' },
+    };
+
+    const params = new URLSearchParams(window.location.search);
+    const key = params.get('course');
+    const c = courses[key] || courses.math201;
+    const t = teachers[c.teacherKey];
+
+    document.getElementById('courseTitle').textContent = `Course Introduction — ${c.name}`;
+    document.getElementById('teacherName').textContent = t.name;
+    document.getElementById('teacherDesignation').textContent = t.designation;
+    document.getElementById('teacherBio').textContent = t.bio;
+    document.getElementById('d_name').textContent = c.name;
+    document.getElementById('d_intake').textContent = c.intake;
+    document.getElementById('d_dates').textContent = c.dates;
+    document.getElementById('d_time').textContent = c.time;
+    document.getElementById('d_size').textContent = c.size;
+    document.getElementById('d_fees').textContent = c.fees;
+
+    function enrolNow() {
+      // TODO (Week 8): call the enrolment endpoint instead of just showing a confirmation
+      if (confirm(`Enrol in ${c.name}? This will be added to your dashboard once confirmed by the platform.`)) {
+        alert(`Enrolment request for ${c.name} submitted.`);
+      }
+    }
+  </script>
+</body>
+</html>

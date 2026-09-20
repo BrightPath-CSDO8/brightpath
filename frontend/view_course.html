@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Course Details — Education Management Platform</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body>
+  <nav class="navbar navbar-light bg-light border-bottom px-3">
+    <span class="navbar-brand mb-0 h1">Education Management Platform</span>
+    <span class="text-muted">
+      Admin (Administrator) &nbsp;|&nbsp; <a href="view_admin.html?admin=admin">My Profile</a> &nbsp;|&nbsp; <a href="login.html">Logout</a>
+    </span>
+  </nav>
+
+  <div class="container my-3">
+    <a href="manage_courses.html">Back to Manage Courses</a>
+  </div>
+
+  <div class="container mb-5" style="max-width: 640px;">
+    <h4 class="mb-4" id="pageTitle">Course Details</h4>
+
+    <!-- TODO (Week 8): wire to the course-update endpoint; load real record by course ID instead of the demo lookup below -->
+    <form id="courseForm">
+      <div class="row">
+        <div class="col-md-8 mb-3">
+          <label class="form-label">Course name</label>
+          <input type="text" class="form-control" id="f_name" disabled>
+        </div>
+        <div class="col-md-4 mb-3">
+          <label class="form-label">Course status</label>
+          <select class="form-select" id="f_status" disabled>
+            <option>Active</option>
+            <option>Inactive</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="row">
+        <div class="col-md-6 mb-3">
+          <label class="form-label">Intake</label>
+          <input type="text" class="form-control" id="f_intake" disabled>
+        </div>
+        <div class="col-md-6 mb-3">
+          <label class="form-label">Max enrolments</label>
+          <input type="number" class="form-control" id="f_max" disabled>
+        </div>
+      </div>
+
+      <div class="mb-3">
+        <label class="form-label">Course fee</label>
+        <div class="input-group">
+          <span class="input-group-text">S$</span>
+          <input type="number" class="form-control" id="f_fee" disabled>
+        </div>
+      </div>
+
+      <div class="mb-3">
+        <label class="form-label">Course Date(s)</label>
+        <input type="text" class="form-control" id="f_dates" disabled>
+      </div>
+
+      <div class="row">
+        <div class="col-md-6 mb-3">
+          <label class="form-label">Course Time — Start</label>
+          <input type="time" class="form-control" id="f_start" disabled>
+        </div>
+        <div class="col-md-6 mb-3">
+          <label class="form-label">Course Time — End</label>
+          <input type="time" class="form-control" id="f_end" disabled>
+        </div>
+      </div>
+
+      <div class="row">
+        <div class="col-md-6 mb-3">
+          <label class="form-label">Teacher Assigned</label>
+          <!-- TODO (Week 8): populate from the teachers API instead of this fixed list -->
+          <select class="form-select" id="f_teacher" disabled>
+            <option>Mr. Lim</option>
+            <option>Ms. Ong</option>
+            <option>Mr. Rahman</option>
+          </select>
+        </div>
+        <div class="col-md-6 mb-3">
+          <label class="form-label">Room Assigned</label>
+          <input type="text" class="form-control" id="f_room" disabled>
+        </div>
+      </div>
+
+
+
+      <div class="mb-4">
+        <label class="form-label">Remarks / Others</label>
+        <textarea class="form-control" rows="2" id="f_remarks" disabled></textarea>
+      </div>
+
+      <div class="mb-4 p-3 border rounded bg-light">
+        <div class="fw-medium mb-1">Documents</div>
+        <a href="documents.html" id="docLink">View / upload documents</a>
+      </div>
+
+      <div class="d-flex gap-2">
+        <button type="button" class="btn btn-primary flex-fill" id="editBtn" onclick="enterEditMode()">Edit</button>
+        <button type="submit" class="btn btn-primary flex-fill d-none" id="saveBtn">Save changes</button>
+        <button type="button" class="btn btn-outline-secondary flex-fill d-none" id="cancelBtn" onclick="cancelEdit()">Cancel</button>
+      </div>
+    </form>
+  </div>
+
+  <script>
+    // Demo-only lookup standing in for a real API call by course ID (Week 8)
+    const courses = {
+      math101: { name: 'Math 101', status: 'Active', intake: '2026 Term 3', max: 30, fee: 280,
+                 dates: 'Every Mon, 1 Sep – 15 Nov 2026', start: '10:00', end: '12:00',
+                 teacher: 'Mr. Lim', room: 'Room A', remarks: '' },
+      math201: { name: 'Math 201', status: 'Active', intake: '2026 Term 3', max: 25, fee: 280,
+                 dates: 'Every Wed, 1 Sep – 15 Nov 2026', start: '10:00', end: '12:00',
+                 teacher: 'Mr. Lim', room: 'Room A', remarks: '' },
+      english101: { name: 'English 101', status: 'Active', intake: '2026 Term 3', max: 28, fee: 260,
+                 dates: 'Every Wed, 1 Sep – 15 Nov 2026', start: '14:00', end: '16:00',
+                 teacher: 'Ms. Ong', room: 'Room B', remarks: '' },
+      science101: { name: 'Science 101', status: 'Active', intake: '2026 Term 3', max: 20, fee: 320,
+                 dates: 'Every Fri, 1 Sep – 15 Nov 2026', start: '09:00', end: '11:00',
+                 teacher: 'Mr. Rahman', room: 'Room C', remarks: 'Requires lab access' }
+    };
+
+    const params = new URLSearchParams(window.location.search);
+    const key = params.get('course');
+    const c = courses[key] || courses.math101; // fallback so the page still renders if opened directly
+
+    const fieldIds = ['f_name', 'f_status', 'f_intake', 'f_max', 'f_fee', 'f_dates', 'f_start', 'f_end', 'f_teacher', 'f_room', 'f_remarks'];
+
+    function loadValues() {
+      document.getElementById('pageTitle').textContent = `Course Details — ${c.name}`;
+      document.getElementById('f_name').value = c.name;
+      document.getElementById('f_status').value = c.status;
+      document.getElementById('f_intake').value = c.intake;
+      document.getElementById('f_max').value = c.max;
+      document.getElementById('f_fee').value = c.fee;
+      document.getElementById('f_dates').value = c.dates;
+      document.getElementById('f_start').value = c.start;
+      document.getElementById('f_end').value = c.end;
+      document.getElementById('f_teacher').value = c.teacher;
+      document.getElementById('f_room').value = c.room;
+      document.getElementById('f_remarks').value = c.remarks;
+    }
+
+    loadValues();
+    document.getElementById('docLink').href = 'documents.html?type=course&name=' + encodeURIComponent(c.name);
+
+    function setFieldsDisabled(disabled) {
+      fieldIds.forEach(id => document.getElementById(id).disabled = disabled);
+    }
+
+    function enterEditMode() {
+      setFieldsDisabled(false);
+      document.getElementById('editBtn').classList.add('d-none');
+      document.getElementById('saveBtn').classList.remove('d-none');
+      document.getElementById('cancelBtn').classList.remove('d-none');
+    }
+
+    function exitEditMode() {
+      setFieldsDisabled(true);
+      document.getElementById('editBtn').classList.remove('d-none');
+      document.getElementById('saveBtn').classList.add('d-none');
+      document.getElementById('cancelBtn').classList.add('d-none');
+    }
+
+    function cancelEdit() {
+      loadValues(); // discard any unsaved edits, revert to original values
+      exitEditMode();
+    }
+
+    document.getElementById('courseForm').addEventListener('submit', function (e) {
+      e.preventDefault();
+      // TODO (Week 8): send updated field values to the course-update endpoint
+      exitEditMode();
+    });
+  </script>
+</body>
+</html>

@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Student Dashboard — Education Management Platform</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body>
+  <nav class="navbar navbar-light bg-light border-bottom px-3">
+    <span class="navbar-brand mb-0 h1">Education Management Platform</span>
+    <span class="text-muted">
+      <!-- TODO (Week 8): replace with logged-in student's real name -->
+      Jane Tan (Student) &nbsp;|&nbsp; <a href="student_profile.html">My Profile</a> &nbsp;|&nbsp; <a href="messages.html?role=student">Messages <span class="badge bg-danger">1</span></a> &nbsp;|&nbsp; <a href="login.html">Logout</a>
+    </span>
+  </nav>
+
+  <div class="container my-4">
+
+    <div class="card mb-4">
+      <div class="card-header">My courses &amp; schedule</div>
+      <table class="table mb-0" style="table-layout: fixed; width: 100%;">
+        <thead><tr>
+          <th style="width: 14.28%;">Date</th>
+          <th style="width: 14.28%;">Day</th>
+          <th style="width: 14.28%;">Time</th>
+          <th style="width: 14.28%;">Course</th>
+          <th style="width: 14.28%;">Teacher</th>
+          <th style="width: 14.28%;">Room</th>
+          <th style="width: 14.28%;">Payment</th>
+        </tr></thead>
+        <tbody>
+          <!-- TODO (Week 8): replace hardcoded rows with data from the enrolment + schedule + payment APIs.
+               Payment badge reflects whether a matching Payment record exists — see Manage Payments. -->
+          <tr><td>07 Sep 2026</td><td>Mon</td><td>10:00–12:00</td><td>Math 101</td><td>Mr. Lim</td><td>Room A</td><td><span class="badge bg-success">Paid</span></td></tr>
+          <tr><td>09 Sep 2026</td><td>Wed</td><td>14:00–16:00</td><td>English 101</td><td>Ms. Ong</td><td>Room B</td><td><span class="badge bg-success">Paid</span></td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="card mb-4">
+      <div class="card-header">Grades and feedback</div>
+      <table class="table mb-0" style="table-layout: fixed; width: 100%;">
+        <thead><tr>
+          <th style="width: 25%;">Course</th>
+          <th style="width: 25%;">Assessment</th>
+          <th style="width: 25%;">Score</th>
+          <th style="width: 25%;">Feedback</th>
+        </tr></thead>
+        <tbody>
+          <!-- TODO (Week 8): replace hardcoded rows with data from the grades API -->
+          <tr><td>Math 101</td><td>Midterm</td><td>85</td><td>Good progress on algebra</td></tr>
+          <tr><td>English 101</td><td>Essay 1</td><td>78</td><td>Work on structure</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="card mb-4">
+      <div class="card-header">My attendance</div>
+      <table class="table mb-0" style="table-layout: fixed; width: 100%;">
+        <thead><tr>
+          <th style="width: 25%;">Date</th>
+          <th style="width: 25%;">Course</th>
+          <th style="width: 25%;">Status</th>
+          <th style="width: 25%;">Marked by</th>
+        </tr></thead>
+        <tbody>
+          <!-- TODO (Week 8): replace hardcoded rows with data from the attendance API -->
+          <tr><td>31 Aug 2026</td><td>Math 101</td><td><span class="badge bg-success">Present</span></td><td>Mr. Lim</td></tr>
+          <tr><td>02 Sep 2026</td><td>English 101</td><td><span class="badge bg-success">Present</span></td><td>Ms. Ong</td></tr>
+          <tr><td>07 Sep 2026</td><td>Math 101</td><td><span class="badge bg-warning text-dark">Late</span></td><td>Mr. Lim</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- TODO (Week 8): wire this to the course browsing/enrolment endpoint -->
+    <a href="browse_courses.html" class="btn btn-primary">Enrol in a course</a>
+
+  </div>
+</body>
+</html>

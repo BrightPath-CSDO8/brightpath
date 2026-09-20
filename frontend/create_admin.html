@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Create Admin Account — Education Management Platform</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body>
+  <nav class="navbar navbar-light bg-light border-bottom px-3">
+    <span class="navbar-brand mb-0 h1">Education Management Platform</span>
+    <span class="text-muted">
+      Admin (Administrator) &nbsp;|&nbsp; <a href="login.html">Logout</a>
+    </span>
+  </nav>
+
+  <div class="container my-3">
+    <a href="manage_admins.html">Back to Manage Admins</a>
+  </div>
+
+  <div class="container mb-5" style="max-width: 480px;">
+    <h4 class="mb-4">Create Admin Account</h4>
+
+    <!-- New accounts are always created as regular Admin, never Super Admin — promotion happens
+         separately via Edit, and only one Super Admin can exist at a time. -->
+    <!-- TODO (Week 8): wire to the admin-creation endpoint -->
+    <form>
+      <div class="mb-3">
+        <label class="form-label">Name</label>
+        <input type="text" class="form-control">
+      </div>
+      <div class="mb-4">
+        <label class="form-label">Email address</label>
+        <input type="email" class="form-control" placeholder="name@school.edu">
+      </div>
+
+      <div class="d-flex gap-2">
+        <button type="submit" class="btn btn-primary flex-fill">Confirm</button>
+        <a href="manage_admins.html" class="btn btn-outline-secondary flex-fill">Cancel</a>
+      </div>
+    </form>
+  </div>
+</body>
+</html>
