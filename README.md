@@ -1,11 +1,14 @@
-To start the application (for testing):
-Run this command to create Database tables and include mock data:
-`python seed_db.py`
-Then run command: This command is to run/test the backend endpoints
-`python -m backend.run` 
 # BrightPath
 
 BrightPath is an education management platform.
+
+## Backend BrightPath (for LOCAL testing ONLY)
+To start local testing application:
+
+Run this command is to include mock data in SQLite tables:
+`python seed_db.py`
+Then run command: This command is to run/test the backend endpoints against your own SQLite database
+`python -m backend.run` 
 
 ## Database
 
