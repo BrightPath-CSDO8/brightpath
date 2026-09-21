@@ -3,6 +3,7 @@ from backend.app.extensions import db
 from database.models import Users, Student, Course, Enrolment
 
 from backend.app.utils import generate_business_id
+from datetime import date
 
 # Schema
 from backend.app.schemas.enrolment_schema import (
@@ -61,6 +62,7 @@ def svc_create_enrolment(
         student_id=student.student_id,
         course_id=internal_course_id,
         status="PENDING",
+        enrolment_date=date.today(),
     )
 
     db.session.add(new_enrolment)

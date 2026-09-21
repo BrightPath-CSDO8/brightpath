@@ -10,6 +10,11 @@ class UserRole(str, Enum):
     TEACHER = "TEACHER"
 
 
+class AdminStatus(str, Enum):
+    ACTIVE = "ACTIVE"
+    INACTIVE = "INACTIVE"
+
+
 class Salutation(str, Enum):
     MR = "Mr"
     MRS = "Mrs"
@@ -184,6 +189,7 @@ class AdminProfile(BaseModel):
     model_config = ConfigDict(from_attributes=True)
     first_name: str
     last_name: str
+    status: AdminStatus
 
 
 class AdminCreate(BaseModel):
