@@ -8,7 +8,7 @@ def create_app():
     app = Flask(__name__, instance_relative_config=True)
 
     app.config.from_object(Config)
-    app.secret_key = app.config["FLASK_SECRET_KEY"]  # Required for Flask sessions
+    app.secret_key = app.config["SECRET_KEY"]  # Required for Flask sessions
 
     # initialized SQLAlchemy
     db.init_app(app)
