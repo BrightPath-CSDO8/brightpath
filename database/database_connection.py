@@ -1,35 +1,26 @@
-import struct
+import os
 import time
 import pyodbc
 
-from azure.identity import DeviceCodeCredential
+from dotenv import load_dotenv
 
 
-SERVER = "brightpath-sql-server.database.windows.net"
-DATABASE = "brightpath-db"
+load_dotenv()
 
-SQL_COPT_SS_ACCESS_TOKEN = 1256
 
-credential = DeviceCodeCredential()
+SERVER = os.getenv("AZURE_SQL_SERVER")
+DATABASE = os.getenv("AZURE_SQL_DATABASE")
+USERNAME = os.getenv("AZURE_SQL_USERNAME")
+PASSWORD = os.getenv("AZURE_SQL_PASSWORD")
 
 
 def get_connection():
-    token = credential.get_token(
-        "https://database.windows.net/.default"
-    ).token
-
-    token_bytes = token.encode("utf-16-le")
-
-    token_struct = struct.pack(
-        f"<I{len(token_bytes)}s",
-        len(token_bytes),
-        token_bytes
-    )
-
     connection_string = (
         "Driver={ODBC Driver 18 for SQL Server};"
         f"Server=tcp:{SERVER},1433;"
         f"Database={DATABASE};"
+        f"Uid={USERNAME};"
+        f"Pwd={PASSWORD};"
         "Encrypt=yes;"
         "TrustServerCertificate=no;"
         "Connection Timeout=60;"
@@ -41,12 +32,7 @@ def get_connection():
         try:
             print(f"Connecting to Azure SQL (attempt {attempt})...")
 
-            connection = pyodbc.connect(
-                connection_string,
-                attrs_before={
-                    SQL_COPT_SS_ACCESS_TOKEN: token_struct
-                }
-            )
+            connection = pyodbc.connect(connection_string)
 
             print("Azure SQL connection established.")
             return connection
