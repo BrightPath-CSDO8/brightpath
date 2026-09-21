@@ -9,6 +9,8 @@ class Users(db.Model):
 
     user_id = db.Column(db.Integer, primary_key=True)
 
+    # Keep for possible future Entra ID integration.
+    # It can remain NULL while username/password authentication is used.
     entra_object_id = db.Column(db.String(255), unique=True, nullable=True)
 
     email = db.Column(db.String(255), unique=True, nullable=False)
@@ -39,9 +41,14 @@ class Student(db.Model):
 
     mobile = db.Column(db.String(20), nullable=True)
 
-    status = db.Column(db.String(20), nullable=False, default="ACTIVE")
-
     created_at = db.Column(db.DateTime, nullable=False, server_default=db.func.now())
+    status = db.Column(db.String(20), nullable=False, default="ACTIVE", index=True)
+
+    __table_args__ = (
+        db.CheckConstraint(
+            "status IN ('ACTIVE', 'INACTIVE')", name="ck_student_status"
+        ),
+    )
 
 
 class Teacher(db.Model):
@@ -63,15 +70,22 @@ class Teacher(db.Model):
 
     mobile = db.Column(db.String(20), nullable=True)
 
-    status = db.Column(db.String(20), nullable=False, default="ACTIVE")
-
     created_at = db.Column(db.DateTime, nullable=False, server_default=db.func.now())
+    status = db.Column(db.String(20), nullable=False, default="ACTIVE", index=True)
+
+    __table_args__ = (
+        db.CheckConstraint(
+            "status IN ('ACTIVE', 'INACTIVE')", name="ck_teacher_status"
+        ),
+    )
 
 
 class Admin(db.Model):
     __tablename__ = "Admin"
 
     admin_id = db.Column(db.Integer, primary_key=True)
+
+    adm_id_bus = db.Column(db.String(20), unique=True, nullable=False)
 
     user_id = db.Column(
         db.Integer, db.ForeignKey("Users.user_id"), unique=True, nullable=False
@@ -82,6 +96,14 @@ class Admin(db.Model):
     last_name = db.Column(db.String(100), nullable=False)
 
     created_at = db.Column(db.DateTime, nullable=False, server_default=db.func.now())
+
+    status = db.Column(db.String(20), nullable=False, default="ACTIVE", index=True)
+
+    created_at = db.Column(db.DateTime, nullable=False, server_default=db.func.now())
+
+    __table_args__ = (
+        db.CheckConstraint("status IN ('ACTIVE', 'INACTIVE')", name="ck_admin_status"),
+    )
 
 
 class Classroom(db.Model):
@@ -113,7 +135,7 @@ class Course(db.Model):
 
     end_date = db.Column(db.Date, nullable=False)
 
-    status = db.Column(db.String(20), nullable=False, default="PENDING")
+    status = db.Column(db.String(20), nullable=False, default="PENDING", index=True)
 
     capacity = db.Column(db.Integer, nullable=False)
 
@@ -125,6 +147,17 @@ class Course(db.Model):
         db.Integer, db.ForeignKey("Classroom.classroom_id"), nullable=False
     )
     teacher = db.relationship("Teacher")
+
+    teacher = db.relationship("Teacher")
+
+    created_at = db.Column(db.DateTime, nullable=False, server_default=db.func.now())
+
+    __table_args__ = (
+        db.CheckConstraint(
+            "status IN ('OPEN', 'CLOSED', 'INACTIVE', 'PENDING')",
+            name="ck_course_status",
+        ),
+    )
 
 
 class Enrolment(db.Model):
@@ -140,15 +173,21 @@ class Enrolment(db.Model):
 
     course_id = db.Column(db.Integer, db.ForeignKey("Course.course_id"), nullable=False)
 
-    # enrolment_date = db.Column(db.Date, nullable=False)
+    # Hidaya requested a normal DATE rather than DateTime.
     enrolment_date = db.Column(
-        db.DateTime, nullable=False, server_default=db.func.now()
+        db.Date, nullable=False, server_default=db.text("CAST(GETDATE() AS DATE)")
     )
 
-    status = db.Column(db.String(20), nullable=False, default="PENDING")
+    status = db.Column(db.String(20), nullable=False, default="PENDING", index=True)
+
+    created_at = db.Column(db.DateTime, nullable=False, server_default=db.func.now())
 
     __table_args__ = (
         db.UniqueConstraint("student_id", "course_id", name="uq_student_course"),
+        db.CheckConstraint(
+            "status IN ('PENDING', 'CONFIRMED', 'CANCELLED')",
+            name="ck_enrolment_status",
+        ),
     )
 
 
@@ -163,11 +202,15 @@ class Attendance(db.Model):
 
     attendance_date = db.Column(db.Date, nullable=False)
 
-    status = db.Column(db.String(20), nullable=False, default="NIL")
+    # Teacher/backend must supply one of the three valid values.
+    status = db.Column(db.String(20), nullable=False, index=True)
 
     __table_args__ = (
         db.UniqueConstraint(
             "enrolment_id", "attendance_date", name="uq_attendance_enrolment_date"
+        ),
+        db.CheckConstraint(
+            "status IN ('PRESENT', 'LATE', 'ABSENT')", name="ck_attendance_status"
         ),
     )
 
