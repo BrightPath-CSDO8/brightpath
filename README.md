@@ -10,6 +10,16 @@ Run this command is to include mock data in SQLite tables:
 Then run command: This command is to run/test the backend endpoints against your own SQLite database
 `python -m backend.run` 
 
+# Tell Flask where your app entrypoint is
+export FLASK_APP=backend.run:app  
+
+# Enable debug mode (auto-reloads code when you make changes)
+export FLASK_DEBUG=1             
+
+# Run the local server
+flask run --port 5000
+
+
 ## Database
 
 The application uses Azure SQL Database.
