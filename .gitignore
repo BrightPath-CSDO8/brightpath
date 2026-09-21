@@ -24,3 +24,4 @@ database/instance/
 
 # Local database administration scripts
 recreate_tables.py
+drop_tables.py

@@ -13,7 +13,6 @@ class Users(db.Model):
     # It can remain NULL while username/password authentication is used.
     entra_object_id = db.Column(
         db.String(255),
-        unique=True,
         nullable=True
     )
 
