@@ -4,6 +4,8 @@ import pyodbc
 
 from dotenv import load_dotenv
 
+pyodbc.pooling = False
+
 
 load_dotenv()
 
