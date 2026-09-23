@@ -16,3 +16,7 @@ class NotFoundError(Exception):
 
 class DuplicateError(Exception):
     pass
+
+
+class ValidationError(Exception):
+    pass
