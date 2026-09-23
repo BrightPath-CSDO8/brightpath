@@ -1,12 +1,21 @@
 from backend.app.extensions import db
 
-from database.models import Users, Teacher, Student, Course, Enrolment, Attendance
+from database.models import (
+    Users,
+    Teacher,
+    Student,
+    Course,
+    Enrolment,
+    Attendance,
+    Grade,
+)
 
 # Schema
 from backend.app.schemas.teacher_schema import (
     TeacherCourse,
     CourseStudents,
     BulkAttendanceUpdate,
+    BulkGradesUpdate,
 )
 
 # Exceptions
@@ -221,6 +230,144 @@ def svc_bulk_attendance(user_id: str, course_id_bus: str, data: BulkAttendanceUp
     return {
         "message": "Attendance submitted successfully.",
         "attendance_date": data.attendance_date.isoformat(),
+        "created": created,
+        "updated": updated,
+        "total": len(data.students),
+    }
+
+
+def svc_bulk_grades(user_id: str, course_id_bus: str, data: BulkGradesUpdate):
+    # --------------------------------------------------
+    # 1. Obtain teacher's internal ID
+    # --------------------------------------------------
+    teacher_stmt = (
+        db.select(Teacher.teacher_id)
+        .join(Users, Teacher.user_id == Users.user_id)
+        .where(Users.user_id == user_id)
+    )
+
+    teacher_internal_id = db.session.scalar(teacher_stmt)
+
+    if not teacher_internal_id:
+        raise ForbiddenError("Current user is not a Teacher in the system.")
+
+    # --------------------------------------------------
+    # 2. Verify course belongs to teacher
+    # --------------------------------------------------
+    teacher_courses = db.select(Course.course_id).where(
+        Course.teacher_id == teacher_internal_id,
+        Course.course_id_bus == course_id_bus,
+    )
+
+    course_internal_id = db.session.scalar(teacher_courses)
+
+    if not course_internal_id:
+        raise ForbiddenError("Teacher is not assigned to this course.")
+
+    # --------------------------------------------------
+    # 3. Get submitted enrolment business IDs
+    # --------------------------------------------------
+    submitted_enrolment_ids = [student.enrolment_id_bus for student in data.students]
+
+    if not submitted_enrolment_ids:
+        raise AppValidationError("At least one student grade record is required.")
+
+    if len(submitted_enrolment_ids) != len(set(submitted_enrolment_ids)):
+        raise DuplicateError("Duplicate enrolment IDs are not allowed.")
+
+    # --------------------------------------------------
+    # 4. Resolve enrolments belonging to this course
+    # --------------------------------------------------
+    enrolment_stmt = db.select(
+        Enrolment.enrolment_id,
+        Enrolment.enrolment_id_bus,
+    ).where(
+        Enrolment.course_id == course_internal_id,
+        Enrolment.enrolment_id_bus.in_(submitted_enrolment_ids),
+    )
+
+    enrolments = db.session.execute(enrolment_stmt).all()
+
+    enrolment_map = {
+        enrolment.enrolment_id_bus: enrolment.enrolment_id for enrolment in enrolments
+    }
+
+    # --------------------------------------------------
+    # 5. Check for invalid enrolments
+    # --------------------------------------------------
+    missing_enrolments = [
+        enrolment_id_bus
+        for enrolment_id_bus in submitted_enrolment_ids
+        if enrolment_id_bus not in enrolment_map
+    ]
+
+    if missing_enrolments:
+        raise AppValidationError(
+            f"Invalid enrolment(s) for this course: " f"{', '.join(missing_enrolments)}"
+        )
+
+    # --------------------------------------------------
+    # 6. Find existing grades for this assessment
+    # --------------------------------------------------
+    internal_enrolment_ids = list(enrolment_map.values())
+
+    grade_stmt = db.select(Grade).where(
+        Grade.enrolment_id.in_(internal_enrolment_ids),
+        Grade.assessment_name == data.assessment_name,
+    )
+
+    existing_grades = db.session.execute(grade_stmt).scalars().all()
+
+    # internal enrolment_id -> Grade object
+    grade_map = {grade.enrolment_id: grade for grade in existing_grades}
+
+    # --------------------------------------------------
+    # 7. Insert or update grades
+    # --------------------------------------------------
+    created = 0
+    updated = 0
+
+    try:
+        for student in data.students:
+            enrolment_internal_id = enrolment_map[student.enrolment_id_bus]
+
+            grade = grade_map.get(enrolment_internal_id)
+
+            if grade:
+                # Existing grade -> UPDATE
+                grade.score = student.score
+                grade.feedback = student.feedback
+                grade.graded_date = data.graded_date
+
+                updated += 1
+
+            else:
+                # No grade yet -> INSERT
+                grade = Grade(
+                    enrolment_id=enrolment_internal_id,
+                    assessment_name=data.assessment_name,
+                    score=student.score,
+                    feedback=student.feedback,
+                    graded_date=data.graded_date,
+                )
+
+                db.session.add(grade)
+
+                # Keep map synchronized
+                grade_map[enrolment_internal_id] = grade
+
+                created += 1
+
+        db.session.commit()
+
+    except Exception:
+        db.session.rollback()
+        raise
+
+    return {
+        "message": "Grades submitted successfully.",
+        "assessment_name": data.assessment_name,
+        "graded_date": data.graded_date.isoformat(),
         "created": created,
         "updated": updated,
         "total": len(data.students),

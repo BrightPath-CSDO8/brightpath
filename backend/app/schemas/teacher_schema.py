@@ -1,5 +1,6 @@
 from enum import Enum
 from datetime import date
+from decimal import Decimal
 from pydantic import BaseModel, EmailStr, ConfigDict, Field, field_validator
 
 # Schema
@@ -44,3 +45,29 @@ class AttendanceStudent(BaseModel):
 class BulkAttendanceUpdate(BaseModel):
     attendance_date: date
     students: list[AttendanceStudent]
+
+    @field_validator("attendance_date")
+    @classmethod
+    def validate_attendance_date(cls, value):
+        if value >= date.today():
+            raise ValueError("Attendance date must not be later than today.")
+        return value
+
+
+class GradeStudent(BaseModel):
+    enrolment_id_bus: str
+    score: Decimal = Field(ge=Decimal("0"), le=Decimal("100"))
+    feedback: str | None = None
+
+
+class BulkGradesUpdate(BaseModel):
+    graded_date: date
+    assessment_name: str
+    students: list[GradeStudent]
+
+    @field_validator("graded_date")
+    @classmethod
+    def validate_graded_date(cls, value):
+        if value >= date.today():
+            raise ValueError("Assessment date must not be later than today.")
+        return value
