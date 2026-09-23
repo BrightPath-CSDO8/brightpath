@@ -32,4 +32,4 @@ ENV PYTHONPATH=/app
 EXPOSE 5000
 
 # 4. Launch with a high-performance Gunicorn configuration
-CMD ["gunicorn", "--workers=4", "--threads=2", "--bind", "0.0.0.0:5000", "backend.run:app"]
+CMD ["gunicorn", "--workers=3", "--threads=2", "--bind", "0.0.0.0:5000", "backend.run:app"]
