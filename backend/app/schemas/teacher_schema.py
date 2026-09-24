@@ -49,8 +49,8 @@ class BulkAttendanceUpdate(BaseModel):
     @field_validator("attendance_date")
     @classmethod
     def validate_attendance_date(cls, value):
-        if value >= date.today():
-            raise ValueError("Attendance date must not be later than today.")
+        if value > date.today():
+            raise ValueError("Attendance date must be ealier than or today.")
         return value
 
 
@@ -68,6 +68,6 @@ class BulkGradesUpdate(BaseModel):
     @field_validator("graded_date")
     @classmethod
     def validate_graded_date(cls, value):
-        if value >= date.today():
-            raise ValueError("Assessment date must not be later than today.")
+        if value > date.today():
+            raise ValueError("Assessment date must only be earlier than or today.")
         return value

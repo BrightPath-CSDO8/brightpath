@@ -20,6 +20,7 @@ from backend.app.services.user_service import (
     svc_register_student,
     svc_update_student_profile,
 )
+from backend.app.services.student_service import svc_student_attendance
 
 # Exceptions
 from backend.app.exceptions.auth import (
@@ -231,3 +232,15 @@ def update_student(student_id_bus):
         ),
         200,
     )
+
+
+# GET STUDENTS' OWN ATTENDANCE
+@student_bp.route("/student/attendance", methods=["GET"])
+@login_required
+@role_required("STUDENT")
+def my_attendance():
+    current_user = get_current_user()
+
+    result = svc_student_attendance(user_id=current_user.user_id)
+
+    return jsonify(result), 200
