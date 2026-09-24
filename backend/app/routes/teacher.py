@@ -12,6 +12,7 @@ from backend.app.services.teacher_service import (
     svc_teacher_courses,
     svc_teacher_students,
     svc_bulk_attendance,
+    svc_bulk_grades,
 )
 
 # Schemas
@@ -22,11 +23,15 @@ from backend.app.schemas.user_schema import (
     TeacherProfile,
 )
 
+from backend.app.schemas.teacher_schema import BulkAttendanceUpdate, BulkGradesUpdate
+
 # Exceptions
 from backend.app.exceptions.auth import (
     EmailAlreadyRegisteredError,
     ForbiddenError,
     NotFoundError,
+    DuplicateError,
+    ValidationError as AppValidationError,
 )
 
 # Utils
@@ -262,9 +267,129 @@ def course_students(course_id_bus):
 @login_required
 @role_required("TEACHER")
 def students_attendance(course_id_bus):
-    response = request.get_json(silent=True)
-    current_user = get_current_user()
-    attendance_update = svc_bulk_attendance(
-        user_id=current_user.user_id, course_id_bus=course_id_bus, data=response
-    )
-    pass
+    try:
+
+        response = request.get_json(silent=True)
+        current_user = get_current_user()
+        attendance_data = BulkAttendanceUpdate.model_validate(response)
+        result = svc_bulk_attendance(
+            user_id=current_user.user_id,
+            course_id_bus=course_id_bus,
+            data=attendance_data,
+        )
+    except ValidationError as e:
+        details = {}
+
+        for error in e.errors():
+            field = error["loc"][0] if error["loc"] else "request"
+            details[field] = error["msg"].replace("Value error, ", "")
+
+        return (
+            jsonify(
+                {
+                    "error": "Bad request.",
+                    "message": "Invalid request body.",
+                    "details": details,
+                }
+            ),
+            400,
+        )
+
+    except AppValidationError as e:
+        return (
+            jsonify(
+                {
+                    "error": "Validation Error.",
+                    "message": str(e),
+                }
+            ),
+            403,
+        )
+    except ForbiddenError as e:
+        return (
+            jsonify(
+                {
+                    "error": "Forbidden.",
+                    "message": str(e),
+                }
+            ),
+            403,
+        )
+    except DuplicateError as e:
+        return (
+            jsonify(
+                {
+                    "error": "Conflict.",
+                    "message": str(e),
+                }
+            ),
+            409,
+        )
+
+    return jsonify(result), 200
+
+
+# Submit gradings of each student in course (BULK)
+@teacher_bp.route("/teacher/<string:course_id_bus>/grades", methods=["POST"])
+@login_required
+@role_required("TEACHER")
+def students_grades(course_id_bus):
+    try:
+
+        response = request.get_json(silent=True)
+        current_user = get_current_user()
+        grades_data = BulkGradesUpdate.model_validate(response)
+        result = svc_bulk_grades(
+            user_id=current_user.user_id,
+            course_id_bus=course_id_bus,
+            data=grades_data,
+        )
+    except ValidationError as e:
+        details = {}
+
+        for error in e.errors():
+            field = error["loc"][0] if error["loc"] else "request"
+            details[field] = error["msg"].replace("Value error, ", "")
+
+        return (
+            jsonify(
+                {
+                    "error": "Bad request.",
+                    "message": "Invalid request body.",
+                    "details": details,
+                }
+            ),
+            400,
+        )
+    except AppValidationError as e:
+        return (
+            jsonify(
+                {
+                    "error": "Validation Error.",
+                    "message": str(e),
+                }
+            ),
+            403,
+        )
+    except ForbiddenError as e:
+        return (
+            jsonify(
+                {
+                    "error": "Forbidden.",
+                    "message": str(e),
+                }
+            ),
+            403,
+        )
+    except DuplicateError as e:
+        return (
+            jsonify(
+                {
+                    "error": "Conflict.",
+                    "message": str(e),
+                }
+            ),
+            409,
+        )
+
+    return jsonify(result), 200
