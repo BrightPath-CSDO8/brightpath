@@ -10,13 +10,12 @@ def create_app():
 
     app.config.from_object(Config)
     # print("SQLAlchemy engine options:", app.config.get("SQLALCHEMY_ENGINE_OPTIONS"))
+    # 1. Update your Flask cookie settings for Cross-Domain support
     app.secret_key = app.config["SECRET_KEY"]  # Required for Flask sessions
-
-    # Configure CORS to strictly allow your frontend domain
-    CORS(
-        app,
-        resources={r"/api/*": {"origins": app.config["FRONTEND_URL"]}},
-        supports_credentials=True,
+    app.config.update(
+        SESSION_COOKIE_SAMESITE="None",  # Allows cookie transmission across domains
+        SESSION_COOKIE_SECURE=True,  # Required if SameSite is set to None
+        SESSION_COOKIE_HTTPONLY=True,  # Security best practice against XSS
     )
 
     # initialized SQLAlchemy
@@ -41,5 +40,12 @@ def create_app():
     app.register_blueprint(student_bp)
     app.register_blueprint(admin_bp)
     app.register_blueprint(enrol_bp)
+
+    # Configure CORS to strictly allow your frontend domain
+    CORS(
+        app,
+        resources={r"/api/*": {"origins": app.config["FRONTEND_URL"]}},
+        supports_credentials=True,
+    )
 
     return app
