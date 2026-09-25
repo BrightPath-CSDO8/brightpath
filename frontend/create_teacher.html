@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Create Teacher Account — Education Management Platform</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body>
+  <nav class="navbar navbar-light bg-light border-bottom px-3">
+    <span class="navbar-brand mb-0 h1">Education Management Platform</span>
+    <span class="text-muted">
+      Admin (Administrator) &nbsp;|&nbsp; <a href="login.html">Logout</a>
+    </span>
+  </nav>
+
+  <div class="container my-3">
+    <a href="manage_teachers.html">Back to Manage Teachers</a>
+  </div>
+
+  <div class="container mb-5" style="max-width: 640px;">
+    <h4 class="mb-4">Create Teacher Account</h4>
+
+    <!-- TODO (Week 8): wire to the teacher-creation endpoint -->
+    <form>
+      <div class="row">
+        <div class="col-md-6 mb-3">
+          <label class="form-label">Teacher name</label>
+          <input type="text" class="form-control">
+        </div>
+        <div class="col-md-6 mb-3">
+          <label class="form-label">Designation</label>
+          <input type="text" class="form-control" placeholder="e.g. Senior Teacher, Head of Department">
+        </div>
+      </div>
+
+      <div class="row">
+        <div class="col-md-6 mb-3">
+          <label class="form-label">Employment type</label>
+          <select class="form-select">
+            <option>Full Time</option>
+            <option>Part Time</option>
+          </select>
+        </div>
+        <div class="col-md-6 mb-3">
+          <label class="form-label">Status</label>
+          <select class="form-select">
+            <option>Active</option>
+            <option>Inactive</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="row">
+        <div class="col-md-6 mb-3">
+          <label class="form-label">Contact number</label>
+          <input type="tel" class="form-control" placeholder="+65 XXXX XXXX">
+        </div>
+        <div class="col-md-6 mb-3">
+          <label class="form-label">ID number</label>
+          <input type="text" class="form-control" placeholder="NRIC / Passport number">
+        </div>
+      </div>
+
+      <div class="mb-3">
+        <label class="form-label">Address</label>
+        <textarea class="form-control" rows="2"></textarea>
+      </div>
+
+      <div class="row">
+        <div class="col-md-6 mb-3">
+          <label class="form-label">Date of birth</label>
+          <input type="date" class="form-control">
+        </div>
+        <div class="col-md-6 mb-3">
+          <label class="form-label">Email address</label>
+          <input type="email" class="form-control" placeholder="name@example.com">
+        </div>
+      </div>
+
+      <div class="mb-3">
+        <label class="form-label">Remarks / Others</label>
+        <textarea class="form-control" rows="2"></textarea>
+      </div>
+
+      <div class="mb-3">
+        <label class="form-label">Teacher photo</label>
+        <div class="d-flex align-items-center gap-3">
+          <svg id="photoPreview" width="64" height="64" viewBox="0 0 72 72" style="border-radius: 50%; background: #dee2e6; flex-shrink: 0;">
+            <circle cx="36" cy="27" r="14" fill="#adb5bd"/>
+            <path d="M10 65 Q36 42 62 65 Z" fill="#adb5bd"/>
+          </svg>
+          <input type="file" class="form-control" accept="image/*" onchange="previewPhoto(event)">
+        </div>
+        <!-- TODO (Week 8): upload to Azure Blob Storage; this is a live client-side preview only -->
+      </div>
+
+      <div class="mb-3">
+        <label class="form-label">Teacher introduction</label>
+        <textarea class="form-control" rows="3" placeholder="Shown to students on course introduction pages, for every course this teacher teaches"></textarea>
+      </div>
+
+      <div class="d-flex gap-2">
+        <button type="submit" class="btn btn-primary flex-fill">Confirm</button>
+        <a href="manage_teachers.html" class="btn btn-outline-secondary flex-fill">Cancel</a>
+      </div>
+    </form>
+  </div>
+
+  <script>
+    function previewPhoto(event) {
+      const file = event.target.files[0];
+      if (!file) return;
+      const url = URL.createObjectURL(file);
+      const preview = document.getElementById('photoPreview');
+      preview.outerHTML = `<img id="photoPreview" src="${url}" width="64" height="64" style="border-radius: 50%; object-fit: cover; flex-shrink: 0;">`;
+    }
+  </script>
+</body>
+</html>

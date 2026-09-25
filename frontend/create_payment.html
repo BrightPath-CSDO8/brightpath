@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Log Payment — Education Management Platform</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body>
+  <nav class="navbar navbar-light bg-light border-bottom px-3">
+    <span class="navbar-brand mb-0 h1">Education Management Platform</span>
+    <span class="text-muted">
+      Admin (Administrator) &nbsp;|&nbsp; <a href="login.html">Logout</a>
+    </span>
+  </nav>
+
+  <div class="container my-3">
+    <a href="manage_payments.html">Back to Payments</a>
+  </div>
+
+  <div class="container mb-5" style="max-width: 480px;">
+    <h4 class="mb-4">Log Payment</h4>
+
+    <!-- TODO (Week 8): wire to the payment-logging endpoint; populate dropdowns from real APIs -->
+    <form>
+      <div class="mb-3">
+        <label class="form-label">Student</label>
+        <select class="form-select" id="f_student">
+          <option>Jane Tan</option>
+          <option>Bryan Ng</option>
+          <option>Alice Wong</option>
+        </select>
+      </div>
+      <div class="mb-3">
+        <label class="form-label">Course</label>
+        <!-- TODO: ideally filtered to only courses this student is enrolled in -->
+        <select class="form-select" id="f_course">
+          <option>Math 101</option>
+          <option>Math 201</option>
+          <option>English 101</option>
+          <option>Science 101</option>
+        </select>
+      </div>
+      <div class="mb-3">
+        <label class="form-label">Amount</label>
+        <div class="input-group">
+          <span class="input-group-text">S$</span>
+          <input type="number" class="form-control" min="0" step="0.01">
+        </div>
+      </div>
+      <div class="mb-3">
+        <label class="form-label">Date paid</label>
+        <input type="date" class="form-control">
+      </div>
+      <div class="mb-3">
+        <label class="form-label">Method</label>
+        <select class="form-select">
+          <option>PayNow</option>
+          <option>Bank Transfer</option>
+          <option>Cash</option>
+          <option>Other</option>
+        </select>
+      </div>
+      <div class="mb-4">
+        <label class="form-label">Receipt number</label>
+        <input type="text" class="form-control" placeholder="e.g. RCP-1004">
+      </div>
+
+      <div class="d-flex gap-2">
+        <button type="submit" class="btn btn-primary flex-fill">Confirm</button>
+        <a href="manage_payments.html" class="btn btn-outline-secondary flex-fill">Cancel</a>
+      </div>
+    </form>
+  </div>
+
+  <script>
+    // Pre-fill Student/Course when arriving via a "Log Payment" link from view_course_enrolments.html
+    const params = new URLSearchParams(window.location.search);
+    const student = params.get('student');
+    const course = params.get('course');
+    if (student) document.getElementById('f_student').value = student;
+    if (course) document.getElementById('f_course').value = course;
+  </script>
+</body>
+</html>

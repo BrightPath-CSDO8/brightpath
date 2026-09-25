@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Login — Education Management Platform</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body>
+  <div class="container d-flex justify-content-center align-items-center" style="height: 100vh;">
+    <div class="card p-4 shadow-sm" style="width: 420px;">
+      <h4 class="mb-4 fs-5" style="white-space: nowrap;">Education Management Platform</h4>
+      <form id="loginForm">
+        <div class="mb-3">
+          <label class="form-label">Email</label>
+          <input type="email" class="form-control" id="emailInput" placeholder="name@example.com">
+        </div>
+        <div class="mb-3">
+          <label class="form-label">Password</label>
+          <input type="password" class="form-control">
+        </div>
+        <!-- TODO (Week 8): wire this form to the real login/auth endpoint, then route by role -->
+        <button type="submit" class="btn btn-primary w-100 mb-3">Log in</button>
+        <p class="text-muted small mb-3">Demo accounts: admin@school.edu · lim@example.com · jane.tan@example.com (any password)</p>
+
+        <div class="mb-1"><a href="forgot_password.html">Forgot password?</a></div>
+
+        <!-- TODO (Week 8+): confirm final registration endpoint once backend is ready -->
+        <div class="mb-1"><a href="signup.html">Sign up for Student Account</a></div>
+
+        <div class="mb-1"><a href="forgot_email.html">Forgot Email?</a></div>
+
+        <!-- Contact-for-help: routes to the Administrator's email -->
+        <div class="text-muted small mt-2">
+          Need help? <a href="mailto:admin@example.com">Contact us</a>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script>
+    // Demo-only login routing — recognizes a few known demo emails and routes to the right
+    // dashboard, ignoring the password. TODO (Week 8): replace with real auth against the
+    // Users/Auth table, returning the account's actual role.
+    const routes = {
+      'admin@school.edu': 'admin_dashboard.html',
+      'lim@example.com': 'teacher_dashboard.html',
+      'jane.tan@example.com': 'student_dashboard.html',
+    };
+
+    document.getElementById('loginForm').addEventListener('submit', function (e) {
+      e.preventDefault();
+      const email = document.getElementById('emailInput').value.trim().toLowerCase();
+      const target = routes[email];
+      if (target) {
+        window.location.href = target;
+      } else {
+        alert('Unrecognized demo account. Try: admin@school.edu, lim@example.com, or jane.tan@example.com');
+      }
+    });
+  </script>
+</body>
+</html>

@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Create Course — Education Management Platform</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body>
+  <nav class="navbar navbar-light bg-light border-bottom px-3">
+    <span class="navbar-brand mb-0 h1">Education Management Platform</span>
+    <span class="text-muted">
+      Admin (Administrator) &nbsp;|&nbsp; <a href="login.html">Logout</a>
+    </span>
+  </nav>
+
+  <div class="container my-3">
+    <a href="manage_courses.html">Back to Manage Courses</a>
+  </div>
+
+  <div class="container mb-5" style="max-width: 640px;">
+    <h4 class="mb-4">Create Course</h4>
+
+    <!-- TODO (Week 8): wire to the course-creation endpoint -->
+    <form>
+      <div class="row">
+        <div class="col-md-8 mb-3">
+          <label class="form-label">Course name</label>
+          <input type="text" class="form-control">
+        </div>
+        <div class="col-md-4 mb-3">
+          <label class="form-label">Course status</label>
+          <select class="form-select">
+            <option>Active</option>
+            <option>Inactive</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="row">
+        <div class="col-md-6 mb-3">
+          <label class="form-label">Intake</label>
+          <input type="text" class="form-control" placeholder="e.g. 2026 Term 3">
+        </div>
+        <div class="col-md-6 mb-3">
+          <label class="form-label">Max enrolments</label>
+          <input type="number" class="form-control" min="1">
+        </div>
+      </div>
+
+      <div class="mb-3">
+        <label class="form-label">Course fee</label>
+        <div class="input-group">
+          <span class="input-group-text">S$</span>
+          <input type="number" class="form-control" min="0" step="0.01">
+        </div>
+      </div>
+
+      <div class="mb-3">
+        <label class="form-label">Course Date(s)</label>
+        <input type="text" class="form-control" placeholder="e.g. Every Mon &amp; Wed, 1 Sep – 15 Nov 2026">
+      </div>
+
+      <div class="row">
+        <div class="col-md-6 mb-3">
+          <label class="form-label">Course Time — Start</label>
+          <input type="time" class="form-control">
+        </div>
+        <div class="col-md-6 mb-3">
+          <label class="form-label">Course Time — End</label>
+          <input type="time" class="form-control">
+        </div>
+      </div>
+
+      <div class="row">
+        <div class="col-md-6 mb-3">
+          <label class="form-label">Teacher Assigned</label>
+          <!-- TODO (Week 8): populate from the teachers API instead of this fixed list -->
+          <select class="form-select">
+            <option>Mr. Lim</option>
+            <option>Ms. Ong</option>
+            <option>Mr. Rahman</option>
+          </select>
+        </div>
+        <div class="col-md-6 mb-3">
+          <label class="form-label">Room Assigned</label>
+          <input type="text" class="form-control" placeholder="e.g. Room A">
+        </div>
+      </div>
+
+
+
+      <div class="mb-4">
+        <label class="form-label">Remarks / Others</label>
+        <textarea class="form-control" rows="2"></textarea>
+      </div>
+
+      <div class="d-flex gap-2">
+        <button type="submit" class="btn btn-primary flex-fill">Confirm</button>
+        <a href="manage_courses.html" class="btn btn-outline-secondary flex-fill">Cancel</a>
+      </div>
+    </form>
+  </div>
+</body>
+</html>
