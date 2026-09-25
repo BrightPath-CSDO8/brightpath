@@ -9,61 +9,136 @@
   <nav class="navbar navbar-light bg-light border-bottom px-3">
     <a class="navbar-brand mb-0 h1 text-decoration-none" href="teacher_dashboard.html">Education Management Platform</a>
     <span class="text-muted">
-      Mr. Lim (Teacher) &nbsp;|&nbsp; <a href="teacher_profile.html">My Profile</a> &nbsp;|&nbsp; <a href="messages.html?role=teacher">Messages <span class="badge bg-danger">1</span></a> &nbsp;|&nbsp; <a href="login.html">Logout</a>
+      <span id="teacherName">Loading...</span> (Teacher) &nbsp;|&nbsp; <a href="teacher_profile.html">My Profile</a> &nbsp;|&nbsp; <a href="messages.html?role=teacher">Messages</a> &nbsp;|&nbsp; <a href="#" id="logoutLink">Logout</a>
     </span>
   </nav>
 
-  <div class="container my-3">
-    <a href="teacher_dashboard.html">Back to Dashboard</a>
-  </div>
+  <div class="container my-4">
 
-  <div class="container mb-4">
-    <h4 class="mb-3" id="pageTitle">Class Roster</h4>
+    <p><a href="teacher_dashboard.html">&larr; Back to dashboard</a></p>
 
-    <!-- TODO (Week 8): replace hardcoded roster with real data from the enrolments API -->
-    <table class="table table-bordered align-middle">
-      <thead class="table-light">
-        <tr>
-          <th>Name</th>
-          <th>Email address</th>
-          <th>Mobile number</th>
-        </tr>
-      </thead>
-      <tbody id="rosterBody"></tbody>
-    </table>
-
-    <div class="d-flex gap-2 mb-4">
-      <a href="#" id="attendanceLink" class="btn btn-primary">Record Attendance</a>
-      <a href="#" id="gradesLink" class="btn btn-primary">Enter Grades</a>
+    <div class="card mb-4">
+      <div class="card-header">
+        <span id="courseName">Loading course...</span>
+      </div>
+      <div class="card-body py-2 text-muted small" id="courseMeta"></div>
     </div>
+
+    <div class="d-flex gap-2 mb-4" id="actionButtons" style="display: none;">
+      <a class="btn btn-primary" id="recordAttendanceLink" href="#">Record attendance</a>
+      <a class="btn btn-outline-primary" id="enterGradesLink" href="#">Enter grades</a>
+    </div>
+
+    <div class="card mb-4">
+      <div class="card-header">Roster</div>
+      <table class="table mb-0" style="table-layout: fixed; width: 100%;">
+        <thead><tr>
+          <th style="width: 40%;">Student</th>
+          <th style="width: 30%;">Mobile</th>
+          <th style="width: 30%;">Enrolment ID</th>
+        </tr></thead>
+        <tbody id="rosterBody">
+          <tr><td colspan="3" class="text-muted">Loading...</td></tr>
+        </tbody>
+      </table>
+    </div>
+
   </div>
 
   <script>
-    // Demo-only lookup — same rosters already established on the admin side (view_course_enrolments.html)
-    const rosters = {
-      math101: { name: 'Math 101', students: [
-        { key: 'jane', name: 'Jane Tan', email: 'jane.tan@example.com', mobile: '+65 9111 2222' },
-        { key: 'alice', name: 'Alice Wong', email: 'alice.wong@example.com', mobile: '+65 9333 4444' },
-      ]},
-      math201: { name: 'Math 201', students: [
-        { key: 'alice', name: 'Alice Wong', email: 'alice.wong@example.com', mobile: '+65 9333 4444' },
-      ]},
-    };
-
+    const API_BASE = 'https://brightpath-backend-bagrbffzgjchfvek.malaysiawest-01.azurewebsites.net';
     const params = new URLSearchParams(window.location.search);
-    const key = params.get('course');
-    const course = rosters[key] || rosters.math101;
+    const courseId = params.get('course');
 
-    document.getElementById('pageTitle').textContent = `Class Roster — ${course.name}`;
-    document.getElementById('attendanceLink').href = 'record_attendance.html?course=' + key;
-    document.getElementById('gradesLink').href = 'enter_grades.html?course=' + key;
+    function esc(value) {
+      return String(value ?? '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+    }
 
-    const body = document.getElementById('rosterBody');
-    course.students.forEach(s => {
-      const tr = document.createElement('tr');
-      tr.innerHTML = `<td><a href="student_contact.html?student=${s.key}&from=${key}">${s.name}</a></td><td>${s.email}</td><td>${s.mobile}</td>`;
-      body.appendChild(tr);
+    async function apiGet(path) {
+      const response = await fetch(`${API_BASE}${path}`, { credentials: 'include' });
+      if (!response.ok) throw new Error(`${path} returned ${response.status}`);
+      return response.json();
+    }
+
+    async function loadRoster() {
+      const courseNameEl = document.getElementById('courseName');
+      const courseMetaEl = document.getElementById('courseMeta');
+      const rosterBody = document.getElementById('rosterBody');
+
+      if (!courseId) {
+        courseNameEl.textContent = 'No course specified.';
+        rosterBody.innerHTML = '<tr><td colspan="3" class="text-danger">Missing course parameter — go back to the dashboard and click a class.</td></tr>';
+        return;
+      }
+
+      let me;
+      try {
+        me = await apiGet('/api/v1/auth/me');
+      } catch (err) {
+        window.location.href = 'login.html';
+        return;
+      }
+      if (me.user.role !== 'TEACHER') {
+        window.location.href = 'login.html';
+        return;
+      }
+      const teacher = me.teacher || {};
+      document.getElementById('teacherName').textContent =
+        `${teacher.salutation || ''} ${teacher.last_name || ''}`.trim() || me.user.email;
+
+      try {
+        const [courses, roster] = await Promise.all([
+          apiGet('/api/v1/teacher/courses'),
+          apiGet(`/api/v1/teacher/${encodeURIComponent(courseId)}/students`),
+        ]);
+
+        const course = courses.find(c => c.course_id_bus === courseId);
+        if (!course) {
+          courseNameEl.textContent = 'Course not found or not assigned to you.';
+          rosterBody.innerHTML = '<tr><td colspan="3" class="text-danger">You are not assigned to this course.</td></tr>';
+          return;
+        }
+
+        courseNameEl.textContent = course.course_name;
+        courseMetaEl.textContent = `${course.schedule} · ${course.status}`;
+
+        document.getElementById('recordAttendanceLink').href = `record_attendance.html?course=${encodeURIComponent(courseId)}`;
+        document.getElementById('enterGradesLink').href = `enter_grades.html?course=${encodeURIComponent(courseId)}`;
+        document.getElementById('actionButtons').style.display = '';
+
+        if (roster.length === 0) {
+          rosterBody.innerHTML = '<tr><td colspan="3" class="text-muted">No confirmed students enrolled yet.</td></tr>';
+          return;
+        }
+
+        rosterBody.innerHTML = roster.map(s => `<tr>
+          <td>${esc(s.first_name)} ${esc(s.last_name)}</td>
+          <td>${esc(s.mobile)}</td>
+          <td>${esc(s.enrolment_id_bus)}</td>
+        </tr>`).join('');
+      } catch (err) {
+        courseNameEl.textContent = 'Could not load this class.';
+        rosterBody.innerHTML = '<tr><td colspan="3" class="text-danger">Could not load roster. Please refresh.</td></tr>';
+        console.error('Failed to load roster:', err);
+      }
+    }
+
+    document.getElementById('logoutLink').addEventListener('click', async function (e) {
+      e.preventDefault();
+      try {
+        await fetch(`${API_BASE}/api/v1/auth/logout`, { method: 'POST', credentials: 'include' });
+      } catch (err) {
+        console.error('Logout request failed:', err);
+      }
+      window.location.href = 'login.html';
     });
+
+    loadRoster();
   </script>
 </body>
 </html>
