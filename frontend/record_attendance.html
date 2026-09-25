@@ -60,9 +60,7 @@
     }
 
     function todayIso() {
-      const d = new Date();
-      const offset = d.getTimezoneOffset();
-      return new Date(d.getTime() - offset * 60000).toISOString().slice(0, 10);
+      return new Date().toISOString().slice(0, 10);
     }
 
     async function apiGet(path) {

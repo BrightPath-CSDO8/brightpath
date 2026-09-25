@@ -66,9 +66,7 @@
     }
 
     function todayIso() {
-      const d = new Date();
-      const offset = d.getTimezoneOffset();
-      return new Date(d.getTime() - offset * 60000).toISOString().slice(0, 10);
+      return new Date().toISOString().slice(0, 10);
     }
 
     async function apiGet(path) {
@@ -138,7 +136,7 @@
 
         studentsBody.innerHTML = roster.map(s => `<tr>
           <td>${esc(s.first_name)} ${esc(s.last_name)}</td>
-          <td><input type="number" class="form-control" min="0" max="100" step="0.1" data-enrolment="${esc(s.enrolment_id_bus)}" data-field="score" required></td>
+          <td><input type="number" class="form-control" min="0" max="100" step="0.1" data-enrolment="${esc(s.enrolment_id_bus)}" data-field="score"></td>
           <td><input type="text" class="form-control" data-enrolment="${esc(s.enrolment_id_bus)}" data-field="feedback" placeholder="Optional feedback"></td>
         </tr>`).join('');
 
@@ -175,8 +173,7 @@
         const enrolmentId = input.getAttribute('data-enrolment');
         const scoreValue = input.value.trim();
         if (scoreValue === '') {
-          showFormAlert('Please enter a score for every student (0–100).');
-          return;
+          continue;
         }
         const score = Number(scoreValue);
         if (isNaN(score) || score < 0 || score > 100) {
@@ -189,7 +186,7 @@
       }
 
       if (studentsPayload.length === 0) {
-        showFormAlert('No students to grade.');
+        showFormAlert('Please enter a score for at least one student.');
         return;
       }
 
