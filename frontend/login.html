@@ -16,20 +16,17 @@
         </div>
         <div class="mb-3">
           <label class="form-label">Password</label>
-          <input type="password" class="form-control">
+          <input type="password" class="form-control" id="passwordInput">
         </div>
-        <!-- TODO (Week 8): wire this form to the real login/auth endpoint, then route by role -->
-        <button type="submit" class="btn btn-primary w-100 mb-3">Log in</button>
-        <p class="text-muted small mb-3">Demo accounts: admin@school.edu · lim@example.com · jane.tan@example.com (any password)</p>
+
+        <div id="loginError" class="text-danger small mb-3" style="display: none;"></div>
+
+        <button type="submit" class="btn btn-primary w-100 mb-3" id="loginBtn">Log in</button>
 
         <div class="mb-1"><a href="forgot_password.html">Forgot password?</a></div>
-
-        <!-- TODO (Week 8+): confirm final registration endpoint once backend is ready -->
         <div class="mb-1"><a href="signup.html">Sign up for Student Account</a></div>
-
         <div class="mb-1"><a href="forgot_email.html">Forgot Email?</a></div>
 
-        <!-- Contact-for-help: routes to the Administrator's email -->
         <div class="text-muted small mt-2">
           Need help? <a href="mailto:admin@example.com">Contact us</a>
         </div>
@@ -38,23 +35,68 @@
   </div>
 
   <script>
-    // Demo-only login routing — recognizes a few known demo emails and routes to the right
-    // dashboard, ignoring the password. TODO (Week 8): replace with real auth against the
-    // Users/Auth table, returning the account's actual role.
-    const routes = {
-      'admin@school.edu': 'admin_dashboard.html',
-      'lim@example.com': 'teacher_dashboard.html',
-      'jane.tan@example.com': 'student_dashboard.html',
+    const API_BASE = 'https://brightpath-backend-bagrbffzgjchfvek.malaysiawest-01.azurewebsites.net';
+
+    const roleDashboards = {
+      ADMIN: 'admin_dashboard.html',
+      TEACHER: 'teacher_dashboard.html',
+      STUDENT: 'student_dashboard.html',
     };
 
-    document.getElementById('loginForm').addEventListener('submit', function (e) {
+    const form = document.getElementById('loginForm');
+    const errorBox = document.getElementById('loginError');
+    const loginBtn = document.getElementById('loginBtn');
+
+    function showError(message) {
+      errorBox.textContent = message;
+      errorBox.style.display = 'block';
+    }
+
+    form.addEventListener('submit', async function (e) {
       e.preventDefault();
-      const email = document.getElementById('emailInput').value.trim().toLowerCase();
-      const target = routes[email];
-      if (target) {
-        window.location.href = target;
-      } else {
-        alert('Unrecognized demo account. Try: admin@school.edu, lim@example.com, or jane.tan@example.com');
+      errorBox.style.display = 'none';
+
+      const email = document.getElementById('emailInput').value.trim();
+      const password = document.getElementById('passwordInput').value;
+
+      loginBtn.disabled = true;
+      loginBtn.textContent = 'Logging in...';
+
+      try {
+        const response = await fetch(`${API_BASE}/api/v1/auth/login`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',   // required so the session cookie is stored cross-origin
+          body: JSON.stringify({ email, password }),
+        });
+
+        if (response.status === 401) {
+          showError('Incorrect email or password.');
+          return;
+        }
+
+        if (!response.ok) {
+          showError(`Login failed (server returned ${response.status}). Please try again.`);
+          return;
+        }
+
+        const data = await response.json();
+        const role = data.user && data.user.role;
+        const target = roleDashboards[role];
+
+        if (target) {
+          window.location.href = target;
+        } else {
+          showError('Logged in, but could not determine account role. Check console for response shape.');
+          console.log('Login response:', data);
+        }
+      } catch (err) {
+        // Most likely cause: CORS not yet enabled on the backend for this frontend's origin.
+        showError('Could not reach the server. This may be a CORS/network issue.');
+        console.error('Login request failed:', err);
+      } finally {
+        loginBtn.disabled = false;
+        loginBtn.textContent = 'Log in';
       }
     });
   </script>
