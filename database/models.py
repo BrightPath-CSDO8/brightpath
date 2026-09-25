@@ -98,9 +98,7 @@ class Admin(db.Model):
     created_at = db.Column(db.DateTime, nullable=False, server_default=db.func.now())
 
     status = db.Column(db.String(20), nullable=False, default="ACTIVE", index=True)
-
-    created_at = db.Column(db.DateTime, nullable=False, server_default=db.func.now())
-
+    
     __table_args__ = (
         db.CheckConstraint("status IN ('ACTIVE', 'INACTIVE')", name="ck_admin_status"),
     )
