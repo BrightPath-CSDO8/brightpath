@@ -9,108 +9,185 @@
   <nav class="navbar navbar-light bg-light border-bottom px-3">
     <span class="navbar-brand mb-0 h1">Education Management Platform</span>
     <span class="text-muted">
-      Admin (Administrator) &nbsp;|&nbsp; <a href="login.html">Logout</a>
+      <span id="adminName">Loading...</span> (Administrator) &nbsp;|&nbsp; <a href="#" id="logoutLink">Logout</a>
     </span>
   </nav>
 
   <div class="container my-3">
-    <a href="admin_dashboard.html">Main menu</a>
+    <a href="admin_dashboard.html">&larr; Main menu</a>
   </div>
 
   <div class="container">
-    <h4 class="mb-3">Enrolments by Course</h4>
+    <h4 class="mb-3">Enrolments</h4>
 
-    <!-- TODO (Week 8): replace hardcoded rows with real counts from the enrolments API.
-         "Paid/Unpaid" is a simple manual status for now — no real payment gateway integration
-         (per the project brief, payment integration is optional/conceptual only). -->
+    <div id="formAlert" class="alert alert-danger" style="display: none;"></div>
+    <div id="successAlert" class="alert alert-success" style="display: none;"></div>
+
+    <ul class="nav nav-tabs mb-3" id="statusTabs">
+      <li class="nav-item"><a class="nav-link active" href="#" data-status="">All</a></li>
+      <li class="nav-item"><a class="nav-link" href="#" data-status="PENDING">Pending</a></li>
+      <li class="nav-item"><a class="nav-link" href="#" data-status="CONFIRMED">Confirmed</a></li>
+    </ul>
+
     <table class="table table-bordered align-middle" id="enrolmentTable">
       <thead class="table-light">
         <tr>
-          <th class="d-none archive-col">Select</th>
-          <th>Course name</th>
-          <th>Intake</th>
-          <th>Max enrolments</th>
-          <th>Current enrolments</th>
-          <th>Paid enrolments</th>
-          <th>Unpaid enrolments</th>
+          <th>Student</th>
+          <th>Course</th>
+          <th>Status</th>
+          <th>Action</th>
         </tr>
       </thead>
-      <tbody>
-        <tr>
-          <td class="d-none archive-col"><input type="checkbox"></td>
-          <td><a href="view_course_enrolments.html?course=math101">Math 101</a></td>
-          <td>2026 Term 3</td>
-          <td>30</td>
-          <td>28</td>
-          <td>24</td>
-          <td>4</td>
-        </tr>
-        <tr>
-          <td class="d-none archive-col"><input type="checkbox"></td>
-          <td><a href="view_course_enrolments.html?course=math201">Math 201</a></td>
-          <td>2026 Term 3</td>
-          <td>25</td>
-          <td>22</td>
-          <td>19</td>
-          <td>3</td>
-        </tr>
-        <tr>
-          <td class="d-none archive-col"><input type="checkbox"></td>
-          <td><a href="view_course_enrolments.html?course=english101">English 101</a></td>
-          <td>2026 Term 3</td>
-          <td>28</td>
-          <td>25</td>
-          <td>21</td>
-          <td>4</td>
-        </tr>
-        <tr>
-          <td class="d-none archive-col"><input type="checkbox"></td>
-          <td><a href="view_course_enrolments.html?course=science101">Science 101</a></td>
-          <td>2026 Term 3</td>
-          <td>20</td>
-          <td>18</td>
-          <td>15</td>
-          <td>3</td>
-        </tr>
+      <tbody id="enrolmentBody">
+        <tr><td colspan="4" class="text-muted">Loading...</td></tr>
       </tbody>
     </table>
-
-    <div class="d-flex gap-2 mb-4">
-      <a href="create_enrolment.html" class="btn btn-primary">Create</a>
-      <button class="btn btn-outline-danger" id="archiveBtn" onclick="toggleArchiveMode()">Archive</button>
-      <button class="btn btn-danger d-none" id="confirmArchiveBtn" onclick="confirmArchive()">Confirm archive</button>
-      <button class="btn btn-outline-secondary d-none" id="cancelArchiveBtn" onclick="toggleArchiveMode()">Cancel</button>
-    </div>
   </div>
 
   <script>
-    // Client-side only toggle for the wireframe — real archive logic wired to the API in Week 8
-    function toggleArchiveMode() {
-      const cols = document.querySelectorAll('.archive-col');
-      const archiveBtn = document.getElementById('archiveBtn');
-      const confirmBtn = document.getElementById('confirmArchiveBtn');
-      const cancelBtn = document.getElementById('cancelArchiveBtn');
-      const nowShowing = cols[0].classList.contains('d-none');
+    const API_BASE = 'https://brightpath-backend-bagrbffzgjchfvek.malaysiawest-01.azurewebsites.net';
+    let currentStatus = '';
 
-      cols.forEach(c => c.classList.toggle('d-none'));
-      archiveBtn.classList.toggle('d-none', nowShowing);
-      confirmBtn.classList.toggle('d-none', !nowShowing);
-      cancelBtn.classList.toggle('d-none', !nowShowing);
+    function esc(value) {
+      return String(value ?? '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
     }
-    // TODO (Week 8): wire Confirm archive to the archive endpoint, passing selected course-intake IDs
 
-    function confirmArchive() {
-      const table = document.getElementById('enrolmentTable');
-      const checked = table.querySelectorAll('tbody input[type=checkbox]:checked');
-      if (checked.length === 0) {
-        alert('Select at least one row first.');
+    async function apiGet(path) {
+      const response = await fetch(`${API_BASE}${path}`, { credentials: 'include' });
+      if (!response.ok) throw new Error(`${path} returned ${response.status}`);
+      return response.json();
+    }
+
+    function showFormAlert(message) {
+      const alertEl = document.getElementById('formAlert');
+      alertEl.textContent = message;
+      alertEl.style.display = '';
+    }
+
+    function hideAlerts() {
+      document.getElementById('formAlert').style.display = 'none';
+      document.getElementById('successAlert').style.display = 'none';
+    }
+
+    function statusBadge(status) {
+      const cls = status === 'CONFIRMED' ? 'bg-success' : 'bg-secondary';
+      return `<span class="badge ${cls}">${esc(status)}</span>`;
+    }
+
+    async function loadEnrolments() {
+      const enrolmentBody = document.getElementById('enrolmentBody');
+      enrolmentBody.innerHTML = '<tr><td colspan="4" class="text-muted">Loading...</td></tr>';
+
+      try {
+        const path = currentStatus
+          ? `/api/v1/auth/enrolments?status=${encodeURIComponent(currentStatus)}`
+          : '/api/v1/auth/enrolments';
+        const enrolments = await apiGet(path);
+
+        if (enrolments.length === 0) {
+          enrolmentBody.innerHTML = '<tr><td colspan="4" class="text-muted">No enrolments found.</td></tr>';
+          return;
+        }
+
+        enrolmentBody.innerHTML = enrolments.map(e => `<tr>
+          <td>${esc(e.first_name)} ${esc(e.last_name)}</td>
+          <td>${esc(e.course_name)}</td>
+          <td>${statusBadge(e.status)}</td>
+          <td>
+            ${e.status === 'PENDING'
+              ? `<button class="btn btn-sm btn-primary" data-enrolment="${esc(e.enrolment_id_bus)}" data-course="${esc(e.course_name)}" onclick="confirmEnrolment(this)">Confirm</button>`
+              : '<span class="text-muted small">—</span>'}
+          </td>
+        </tr>`).join('');
+      } catch (err) {
+        enrolmentBody.innerHTML = '<tr><td colspan="4" class="text-danger">Could not load enrolments. Please refresh.</td></tr>';
+        console.error('Failed to load enrolments:', err);
+      }
+    }
+
+    async function confirmEnrolment(button) {
+      hideAlerts();
+      const enrolmentId = button.getAttribute('data-enrolment');
+      const courseName = button.getAttribute('data-course');
+
+      button.disabled = true;
+      button.textContent = 'Confirming...';
+
+      try {
+        const response = await fetch(`${API_BASE}/api/v1/enrolment/${encodeURIComponent(enrolmentId)}`, {
+          method: 'PATCH',
+          credentials: 'include',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ status: 'CONFIRMED' }),
+        });
+
+        const body = await response.json().catch(() => ({}));
+
+        if (!response.ok) {
+          showFormAlert(body.message || `Could not confirm enrolment (${response.status}).`);
+          button.disabled = false;
+          button.textContent = 'Confirm';
+          return;
+        }
+
+        const successAlert = document.getElementById('successAlert');
+        successAlert.textContent = `Enrolment for ${courseName} confirmed.`;
+        successAlert.style.display = '';
+
+        await loadEnrolments();
+      } catch (err) {
+        showFormAlert('Network error — could not reach the server. Please try again.');
+        console.error('Confirm enrolment failed:', err);
+        button.disabled = false;
+        button.textContent = 'Confirm';
+      }
+    }
+
+    document.getElementById('statusTabs').addEventListener('click', function (e) {
+      if (e.target.tagName !== 'A') return;
+      e.preventDefault();
+      currentStatus = e.target.getAttribute('data-status');
+      document.querySelectorAll('#statusTabs .nav-link').forEach(a => a.classList.remove('active'));
+      e.target.classList.add('active');
+      hideAlerts();
+      loadEnrolments();
+    });
+
+    async function init() {
+      let me;
+      try {
+        me = await apiGet('/api/v1/auth/me');
+      } catch (err) {
+        window.location.href = 'login.html';
         return;
       }
-      if (confirm(`Archive ${checked.length} enrolment record(s)? They will move to Archives.`)) {
-        checked.forEach(cb => cb.closest('tr').remove());
-        toggleArchiveMode();
+      if (me.user.role !== 'ADMIN') {
+        window.location.href = 'login.html';
+        return;
       }
+      const admin = me.admin || {};
+      document.getElementById('adminName').textContent =
+        `${admin.first_name || ''} ${admin.last_name || ''}`.trim() || me.user.email;
+
+      await loadEnrolments();
     }
+
+    document.getElementById('logoutLink').addEventListener('click', async function (e) {
+      e.preventDefault();
+      try {
+        await fetch(`${API_BASE}/api/v1/auth/logout`, { method: 'POST', credentials: 'include' });
+      } catch (err) {
+        console.error('Logout request failed:', err);
+      }
+      window.location.href = 'login.html';
+    });
+
+    init();
   </script>
 </body>
 </html>
