@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Documents — Education Management Platform</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body>
+  <nav class="navbar navbar-light bg-light border-bottom px-3">
+    <span class="navbar-brand mb-0 h1">Education Management Platform</span>
+    <span class="text-muted">
+      Admin (Administrator) &nbsp;|&nbsp; <a href="view_admin.html?admin=admin">My Profile</a> &nbsp;|&nbsp; <a href="login.html">Logout</a>
+    </span>
+  </nav>
+
+  <div class="container my-3">
+    <a href="#" onclick="history.back(); return false;">Back</a>
+  </div>
+
+  <div class="container">
+    <h4 class="mb-3" id="pageTitle">Documents</h4>
+
+    <!-- TODO: conceptual — files stored in Azure Blob Storage; this table reflects blob metadata -->
+    <table class="table table-bordered align-middle" id="docTable">
+      <thead class="table-light">
+        <tr>
+          <th class="d-none select-col">Select</th>
+          <th>File name</th>
+          <th>File type</th>
+          <th>File size</th>
+          <th>Uploaded by</th>
+          <th>Created</th>
+          <th>Modified/Accessed</th>
+        </tr>
+      </thead>
+      <tbody id="docTableBody">
+        <!-- TODO (Week 8): replace hardcoded rows with data from Blob Storage metadata.
+             Rows below are populated by context (?type=&name=) so this page shows plausible
+             documents for whoever/whatever it was reached from — see script at bottom. -->
+      </tbody>
+    </table>
+
+    <div class="d-flex gap-2 mb-5">
+      <button class="btn btn-primary" id="uploadBtn" onclick="document.getElementById('fileInput').click()">Upload</button>
+      <input type="file" id="fileInput" class="d-none" multiple onchange="handleUpload(event)">
+
+      <button class="btn btn-outline-primary" id="downloadBtn" onclick="startSelect('download')">Download</button>
+      <button class="btn btn-outline-danger" id="deleteBtn" onclick="startSelect('delete')">Delete</button>
+
+      <button class="btn btn-success d-none" id="confirmBtn" onclick="confirmSelect()">Confirm</button>
+      <button class="btn btn-outline-secondary d-none" id="cancelBtn" onclick="cancelSelect()">Cancel</button>
+    </div>
+  </div>
+
+  <script>
+    // Context-aware document sets — a plausible, distinct file list per entity type,
+    // so this page doesn't show a "teaching_certificate.pdf" when reached from a student's profile.
+    const params = new URLSearchParams(window.location.search);
+    const type = params.get('type') || 'teacher';
+    const name = params.get('name') || '';
+
+    document.getElementById('pageTitle').textContent = name ? `Documents — ${name}` : 'Documents';
+
+    const fileSets = {
+      teacher: [
+        { name: 'teaching_certificate.pdf', type: 'PDF', size: '842 KB', by: name || 'Teacher', created: '03 Aug 2026', modified: '03 Aug 2026' },
+        { name: 'employment_contract.docx', type: 'DOCX', size: '58 KB', by: 'Admin', created: '21 Jul 2026', modified: '22 Aug 2026' },
+        { name: 'id_scan.jpg', type: 'JPG', size: '1.2 MB', by: name || 'Teacher', created: '21 Jul 2026', modified: '21 Jul 2026' },
+      ],
+      student: [
+        { name: 'enrolment_form.pdf', type: 'PDF', size: '210 KB', by: name || 'Student', created: '15 Aug 2026', modified: '15 Aug 2026' },
+        { name: 'id_scan.jpg', type: 'JPG', size: '980 KB', by: name || 'Student', created: '15 Aug 2026', modified: '15 Aug 2026' },
+      ],
+      course: [
+        { name: 'course_syllabus.pdf', type: 'PDF', size: '1.4 MB', by: 'Admin', created: '20 Jul 2026', modified: '20 Aug 2026' },
+        { name: 'lecture_slides_wk1.pptx', type: 'PPTX', size: '3.6 MB', by: name || 'Teacher', created: '01 Sep 2026', modified: '01 Sep 2026' },
+      ],
+      admin: [
+        { name: 'employment_contract.docx', type: 'DOCX', size: '61 KB', by: 'Super Admin', created: '10 Jan 2026', modified: '10 Jan 2026' },
+        { name: 'id_scan.jpg', type: 'JPG', size: '1.1 MB', by: name || 'Admin', created: '10 Jan 2026', modified: '10 Jan 2026' },
+      ],
+    };
+
+    const files = fileSets[type] || fileSets.teacher;
+    const tbody = document.getElementById('docTableBody');
+    files.forEach(f => {
+      const tr = document.createElement('tr');
+      tr.dataset.filename = f.name;
+      tr.innerHTML = `
+        <td class="d-none select-col"><input type="checkbox"></td>
+        <td>${f.name}</td>
+        <td>${f.type}</td>
+        <td>${f.size}</td>
+        <td>${f.by}</td>
+        <td>${f.created}</td>
+        <td>${f.modified}</td>
+      `;
+      tbody.appendChild(tr);
+    });
+
+    let mode = null; // 'download' or 'delete'
+
+    function handleUpload(event) {
+      const files = event.target.files;
+      const tbody = document.querySelector('#docTable tbody');
+      // TODO (Week 8): actually upload to Azure Blob Storage; this just reflects the file in the table for the demo
+      for (const file of files) {
+        const sizeKB = (file.size / 1024).toFixed(0) + ' KB';
+        const today = new Date().toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
+        const row = document.createElement('tr');
+        row.dataset.filename = file.name;
+        row.innerHTML = `
+          <td class="select-col d-none"><input type="checkbox"></td>
+          <td>${file.name}</td>
+          <td>${(file.name.split('.').pop() || '').toUpperCase()}</td>
+          <td>${sizeKB}</td>
+          <td>Admin</td>
+          <td>${today}</td>
+          <td>${today}</td>`;
+        tbody.appendChild(row);
+      }
+      event.target.value = '';
+    }
+
+    function startSelect(action) {
+      mode = action;
+      document.querySelectorAll('.select-col').forEach(c => c.classList.remove('d-none'));
+      document.getElementById('uploadBtn').classList.add('d-none');
+      document.getElementById('downloadBtn').classList.add('d-none');
+      document.getElementById('deleteBtn').classList.add('d-none');
+      const confirmBtn = document.getElementById('confirmBtn');
+      confirmBtn.textContent = action === 'download' ? 'Confirm Download' : 'Confirm Delete';
+      confirmBtn.className = action === 'download' ? 'btn btn-success' : 'btn btn-danger';
+      confirmBtn.classList.remove('d-none');
+      document.getElementById('cancelBtn').classList.remove('d-none');
+    }
+
+    function cancelSelect() {
+      mode = null;
+      document.querySelectorAll('.select-col').forEach(c => c.classList.add('d-none'));
+      document.querySelectorAll('#docTable tbody input[type=checkbox]').forEach(cb => cb.checked = false);
+      document.getElementById('uploadBtn').classList.remove('d-none');
+      document.getElementById('downloadBtn').classList.remove('d-none');
+      document.getElementById('deleteBtn').classList.remove('d-none');
+      document.getElementById('confirmBtn').classList.add('d-none');
+      document.getElementById('cancelBtn').classList.add('d-none');
+    }
+
+    function confirmSelect() {
+      const rows = document.querySelectorAll('#docTable tbody tr');
+      const selected = [...rows].filter(r => r.querySelector('input[type=checkbox]').checked);
+
+      if (selected.length === 0) {
+        alert('Select at least one file first.');
+        return;
+      }
+
+      if (mode === 'download') {
+        // Demo-only: downloads a placeholder text file per selection since there's no real file content yet
+        // TODO (Week 8): replace with real download from Azure Blob Storage
+        selected.forEach(row => {
+          const name = row.dataset.filename;
+          const blob = new Blob([`Placeholder content for ${name}`], { type: 'text/plain' });
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.href = url;
+          a.download = name;
+          a.click();
+          URL.revokeObjectURL(url);
+        });
+      } else if (mode === 'delete') {
+        // TODO (Week 8): call the delete endpoint, removing the blob and its metadata record
+        if (confirm(`Delete ${selected.length} file(s)? This cannot be undone.`)) {
+          selected.forEach(row => row.remove());
+        }
+      }
+
+      cancelSelect();
+    }
+  </script>
+</body>
+</html>

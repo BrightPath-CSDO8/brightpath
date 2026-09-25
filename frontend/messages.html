@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Messages — Education Management Platform</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <style>
+    .msg-row { cursor: pointer; }
+    .msg-row.active { background-color: #e7f1ff; }
+    .msg-row.unread { font-weight: 600; }
+    .col-scroll { max-height: 70vh; overflow-y: auto; }
+  </style>
+</head>
+<body>
+  <nav class="navbar navbar-light bg-light border-bottom px-3">
+    <a class="navbar-brand mb-0 h1 text-decoration-none" href="#" id="brandLink">Education Management Platform</a>
+    <span class="text-muted" id="navUser">
+      <a href="login.html">Logout</a>
+    </span>
+  </nav>
+
+  <div class="container my-3">
+    <a href="#" onclick="history.back(); return false;">Back</a>
+  </div>
+
+  <div class="container-fluid px-4">
+    <div class="row">
+
+      <!-- Folder sidebar -->
+      <div class="col-md-2 mb-3">
+        <button class="btn btn-primary w-100 mb-3" onclick="openCompose()">Compose</button>
+        <div class="list-group mb-3">
+          <a href="#" id="groupChatsLink" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center">
+            Group Chats
+            <span class="badge bg-danger rounded-pill d-none" id="groupChatsBadge"></span>
+          </a>
+        </div>
+        <div class="list-group" id="folderList"></div>
+      </div>
+
+      <!-- Message list -->
+      <div class="col-md-4 mb-3">
+        <div class="list-group col-scroll" id="messageList"></div>
+      </div>
+
+      <!-- Reading / compose pane -->
+      <div class="col-md-6 mb-3">
+        <div id="readingPane" class="border rounded p-3"></div>
+      </div>
+
+    </div>
+  </div>
+
+  <script>
+    // ---- Demo-only data and state. TODO (Week 8): replace with real Message table + API calls. ----
+    const params = new URLSearchParams(window.location.search);
+    const role = params.get('role') || 'admin'; // 'admin' | 'teacher' | 'student'
+    const myName = { admin: 'Admin', teacher: 'Mr. Lim', student: 'Jane Tan' }[role];
+    const profileLink = { admin: 'view_admin.html?admin=admin', teacher: 'teacher_profile.html', student: 'student_profile.html' }[role];
+    const dashboardLink = { admin: 'admin_dashboard.html', teacher: 'teacher_dashboard.html', student: 'student_dashboard.html' }[role];
+    document.getElementById('brandLink').href = dashboardLink;
+    document.getElementById('groupChatsLink').href = 'group_chats.html?role=' + role;
+
+    // Group chat unread counts — kept in sync with the per-group breakdown in group_chats.html
+    const groupChatUnread = { admin: 3, teacher: 2, student: 1 }[role];
+    if (groupChatUnread > 0) {
+      const badge = document.getElementById('groupChatsBadge');
+      badge.textContent = groupChatUnread;
+      badge.classList.remove('d-none');
+    }
+    document.getElementById('navUser').innerHTML = `${myName} (${role.charAt(0).toUpperCase() + role.slice(1)}) &nbsp;|&nbsp; <a href="${profileLink}">My Profile</a> &nbsp;|&nbsp; <a href="login.html">Logout</a>`;
+
+    const seedData = {
+      admin: [
+        { id: 1, folder: 'inbox', from: 'Mr. Lim', to: 'Admin', subject: 'Room change request for Math 101', body: 'Could we move Math 101 to Room B from next week? Room A projector is faulty.', date: '20 Aug 2026', read: false },
+        { id: 2, folder: 'inbox', from: 'Jane Tan', to: 'Admin', subject: 'Help: cannot access account', body: 'Hi, I forgot which email is linked to my account. Could you help?', date: '19 Aug 2026', read: false },
+        { id: 3, folder: 'sent', from: 'Admin', to: 'Ms. Ong', subject: 'Re: Term 3 timetable', body: 'Confirmed, the updated timetable is now live on the platform.', date: '18 Aug 2026', read: true },
+      ],
+      teacher: [
+        { id: 1, folder: 'inbox', from: 'Admin', to: 'Mr. Lim', subject: 'Re: Room change request', body: 'Approved — Math 101 is now assigned to Room B starting next week.', date: '21 Aug 2026', read: false },
+        { id: 2, folder: 'inbox', from: 'Bryan Ng', to: 'Mr. Lim', subject: 'Question about homework', body: 'Is question 5 supposed to use the formula from chapter 3 or chapter 4?', date: '20 Aug 2026', read: true },
+        { id: 3, folder: 'sent', from: 'Mr. Lim', to: 'Admin', subject: 'Room change request for Math 101', body: 'Could we move Math 101 to Room B from next week? Room A projector is faulty.', date: '20 Aug 2026', read: true },
+      ],
+      student: [
+        { id: 1, folder: 'inbox', from: 'Mr. Lim', to: 'Jane Tan', subject: 'Class rescheduled', body: 'Friday\'s Math 101 class is moved to 2pm instead of 9am this week only.', date: '21 Aug 2026', read: false },
+        { id: 2, folder: 'inbox', from: 'Admin', to: 'Jane Tan', subject: 'Welcome to the platform', body: 'Your enrolment is confirmed. Let us know if you have any questions.', date: '15 Aug 2026', read: true },
+      ],
+    };
+
+    let messages = JSON.parse(JSON.stringify(seedData[role] || seedData.admin));
+    let nextId = Math.max(...messages.map(m => m.id)) + 1;
+    let currentFolder = 'inbox';
+    let currentMsgId = null;
+
+    const folders = [
+      { key: 'inbox', label: 'Inbox' },
+      { key: 'sent', label: 'Sent' },
+      { key: 'deleted', label: 'Deleted' },
+    ];
+
+    function renderFolders() {
+      const list = document.getElementById('folderList');
+      list.innerHTML = '';
+      folders.forEach(f => {
+        const count = messages.filter(m => m.folder === f.key).length;
+        const unread = messages.filter(m => m.folder === f.key && !m.read).length;
+        const a = document.createElement('a');
+        a.href = '#';
+        a.className = 'list-group-item list-group-item-action d-flex justify-content-between align-items-center' + (f.key === currentFolder ? ' active' : '');
+        a.textContent = f.label;
+        if (unread > 0 && f.key === 'inbox') {
+          const badge = document.createElement('span');
+          badge.className = 'badge bg-danger rounded-pill';
+          badge.textContent = unread;
+          a.appendChild(badge);
+        }
+        a.onclick = (e) => { e.preventDefault(); currentFolder = f.key; currentMsgId = null; renderAll(); };
+        list.appendChild(a);
+      });
+    }
+
+    function renderMessageList() {
+      const list = document.getElementById('messageList');
+      list.innerHTML = '';
+      const items = messages.filter(m => m.folder === currentFolder).sort((a, b) => b.id - a.id);
+      if (items.length === 0) {
+        list.innerHTML = '<div class="text-muted small p-3">No messages.</div>';
+        return;
+      }
+      items.forEach(m => {
+        const div = document.createElement('div');
+        div.className = 'list-group-item msg-row' + (m.id === currentMsgId ? ' active' : '') + (!m.read && currentFolder === 'inbox' ? ' unread' : '');
+        const who = currentFolder === 'sent' ? `To: ${m.to}` : `From: ${m.from}`;
+        const flagIcon = m.flagged ? '<span class="text-warning me-1">&#9733;</span>' : '';
+        div.innerHTML = `<div>${flagIcon}${who}</div><div class="small">${m.subject}</div><div class="text-muted small">${m.date}</div>`;
+        div.onclick = () => { currentMsgId = m.id; m.read = true; renderAll(); };
+        list.appendChild(div);
+      });
+    }
+
+    let moveMode = false;
+
+    function renderReadingPane() {
+      const pane = document.getElementById('readingPane');
+      const m = messages.find(x => x.id === currentMsgId);
+      if (!m) {
+        pane.innerHTML = '<div class="text-muted">Select a message to read.</div>';
+        return;
+      }
+      const deleteLabel = currentFolder === 'deleted' ? 'Delete permanently' : 'Delete';
+
+      const unreadBtn = currentFolder === 'inbox'
+        ? '<button class="btn btn-sm btn-outline-secondary" onclick="markUnread()">Mark as unread</button>'
+        : '';
+      const flagBtn = currentFolder === 'inbox'
+        ? `<button class="btn btn-sm btn-outline-warning" onclick="toggleFlag()">${m.flagged ? 'Unflag' : 'Flag'}</button>`
+        : '';
+
+      let moveControl = '';
+      if (currentFolder === 'deleted') {
+        moveControl = moveMode
+          ? `<select class="form-select form-select-sm d-inline-block" style="width:auto;" id="moveTarget">
+               <option value="inbox">Inbox</option>
+               <option value="sent">Sent</option>
+             </select>
+             <button class="btn btn-sm btn-secondary" onclick="confirmMove()">Go</button>
+             <button class="btn btn-sm btn-outline-secondary" onclick="cancelMove()">Cancel</button>`
+          : '<button class="btn btn-sm btn-outline-secondary" onclick="startMove()">Move</button>';
+      }
+
+      pane.innerHTML = `
+        <div class="d-flex justify-content-between align-items-start mb-3">
+          <div>
+            <h5 class="mb-1">${m.flagged ? '<span class="text-warning">&#9733;</span> ' : ''}${m.subject}</h5>
+            <div class="text-muted small">${currentFolder === 'sent' ? 'To' : 'From'}: ${currentFolder === 'sent' ? m.to : m.from} &nbsp;•&nbsp; ${m.date}</div>
+          </div>
+          <div class="d-flex gap-2 flex-wrap justify-content-end">
+            <button class="btn btn-sm btn-outline-primary" onclick="openReply()">Reply</button>
+            <button class="btn btn-sm btn-outline-primary" onclick="openForward()">Forward</button>
+            ${unreadBtn}
+            ${flagBtn}
+            ${moveControl}
+            <button class="btn btn-sm btn-outline-danger" onclick="deleteMessage()">${deleteLabel}</button>
+          </div>
+        </div>
+        <div style="white-space: pre-wrap;">${m.body}</div>
+      `;
+    }
+
+    function renderAll() {
+      renderFolders();
+      renderMessageList();
+      renderReadingPane();
+    }
+
+    function deleteMessage() {
+      const m = messages.find(x => x.id === currentMsgId);
+      if (!m) return;
+      // TODO (Week 8): call the delete/permanent-delete endpoint
+      if (currentFolder === 'deleted') {
+        if (confirm('Permanently delete this message? This cannot be undone.')) {
+          messages = messages.filter(x => x.id !== m.id);
+          currentMsgId = null;
+        }
+      } else {
+        m.folder = 'deleted';
+        currentMsgId = null;
+      }
+      renderAll();
+    }
+
+    function markUnread() {
+      const m = messages.find(x => x.id === currentMsgId);
+      if (!m) return;
+      // TODO (Week 8): call the mark-unread endpoint
+      m.read = false;
+      currentMsgId = null; // matches normal email UX — opening a message marks it read, so back out to the list
+      renderAll();
+    }
+
+    function toggleFlag() {
+      const m = messages.find(x => x.id === currentMsgId);
+      if (!m) return;
+      // TODO (Week 8): call the flag/unflag endpoint
+      m.flagged = !m.flagged;
+      renderAll();
+    }
+
+    function startMove() {
+      moveMode = true;
+      renderReadingPane();
+    }
+
+    function cancelMove() {
+      moveMode = false;
+      renderReadingPane();
+    }
+
+    function confirmMove() {
+      const m = messages.find(x => x.id === currentMsgId);
+      if (!m) return;
+      const target = document.getElementById('moveTarget').value;
+      // TODO (Week 8): call the move endpoint
+      m.folder = target;
+      moveMode = false;
+      currentFolder = target;
+      currentMsgId = null;
+      renderAll();
+    }
+
+    function openCompose() {
+      showComposeForm({ to: '', subject: '', body: '' }, 'New Message');
+    }
+
+    function openReply() {
+      const m = messages.find(x => x.id === currentMsgId);
+      if (!m) return;
+      const replyTo = currentFolder === 'sent' ? m.to : m.from;
+      const quotedFrom = currentFolder === 'sent' ? myName : m.from;
+      showComposeForm({ to: replyTo, subject: 'Re: ' + m.subject, body: `\n\n---- On ${m.date}, ${quotedFrom} wrote ----\n${m.body}` }, 'Reply');
+    }
+
+    function openForward() {
+      const m = messages.find(x => x.id === currentMsgId);
+      if (!m) return;
+      showComposeForm({ to: '', subject: 'Fwd: ' + m.subject, body: `\n\n---- Forwarded message ----\nFrom: ${m.from}\n${m.body}` }, 'Forward');
+    }
+
+    function showComposeForm(prefill, title) {
+      const pane = document.getElementById('readingPane');
+      pane.innerHTML = `
+        <h5 class="mb-3">${title}</h5>
+        <form id="composeForm">
+          <div class="mb-3">
+            <label class="form-label">To</label>
+            <input type="text" class="form-control" id="c_to" value="${prefill.to}" placeholder="Recipient name">
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Subject</label>
+            <input type="text" class="form-control" id="c_subject" value="${prefill.subject}">
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Message</label>
+            <textarea class="form-control" rows="8" id="c_body">${prefill.body}</textarea>
+          </div>
+          <div class="d-flex gap-2">
+            <button type="submit" class="btn btn-primary">Send</button>
+            <button type="button" class="btn btn-outline-secondary" onclick="renderReadingPane()">Cancel</button>
+          </div>
+        </form>
+      `;
+      document.getElementById('composeForm').addEventListener('submit', function (e) {
+        e.preventDefault();
+        // TODO (Week 8): send via the real messaging endpoint instead of just appending locally
+        const to = document.getElementById('c_to').value || '(no recipient)';
+        messages.push({
+          id: nextId++, folder: 'sent', from: myName, to: to,
+          subject: document.getElementById('c_subject').value,
+          body: document.getElementById('c_body').value,
+          date: 'Just now', read: true,
+        });
+        currentFolder = 'sent';
+        currentMsgId = null;
+        renderAll();
+      });
+    }
+
+    renderAll();
+  </script>
+</body>
+</html>

@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>My Profile — Education Management Platform</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body>
+  <nav class="navbar navbar-light bg-light border-bottom px-3">
+    <span class="navbar-brand mb-0 h1">Education Management Platform</span>
+    <span class="text-muted">
+      Jane Tan (Student) &nbsp;|&nbsp; <a href="messages.html?role=student">Messages</a> &nbsp;|&nbsp; <a href="login.html">Logout</a>
+    </span>
+  </nav>
+
+  <div class="container my-3">
+    <a href="student_dashboard.html">Back to Dashboard</a>
+  </div>
+
+  <div class="container mb-5" style="max-width: 480px;">
+    <h4 class="mb-4">My Profile</h4>
+
+    <!-- TODO (Week 8): wire to the student self-update endpoint -->
+    <form id="profileForm">
+      <div class="mb-3">
+        <label class="form-label">Full name</label>
+        <input type="text" class="form-control" id="f_name" disabled>
+      </div>
+
+      <!-- ID number and Date of birth are read-only — official fields, changes go through Admin -->
+      <div class="mb-3">
+        <label class="form-label">ID number</label>
+        <input type="text" class="form-control" id="f_id" disabled>
+      </div>
+      <div class="mb-3">
+        <label class="form-label">Date of birth</label>
+        <input type="date" class="form-control" id="f_dob" disabled>
+      </div>
+
+      <div class="mb-3">
+        <label class="form-label">Mobile number</label>
+        <input type="tel" class="form-control" id="f_mobile" disabled>
+      </div>
+      <div class="mb-3">
+        <label class="form-label">Address</label>
+        <textarea class="form-control" rows="2" id="f_address" disabled></textarea>
+      </div>
+      <div class="mb-4">
+        <label class="form-label">Email address</label>
+        <input type="email" class="form-control" id="f_email" disabled>
+      </div>
+
+      <div class="mb-4 p-3 border rounded bg-light">
+        <div class="fw-medium mb-1">Password</div>
+        <a href="change_password.html?role=student">Change password</a>
+      </div>
+
+      <div class="d-flex gap-2">
+        <button type="button" class="btn btn-primary flex-fill" id="editBtn" onclick="enterEditMode()">Edit</button>
+        <button type="submit" class="btn btn-primary flex-fill d-none" id="saveBtn">Save changes</button>
+        <button type="button" class="btn btn-outline-secondary flex-fill d-none" id="cancelBtn" onclick="cancelEdit()">Cancel</button>
+      </div>
+    </form>
+  </div>
+
+  <script>
+    // Demo-only — in the real system this loads the logged-in student's own record, no lookup needed
+    const me = {
+      name: 'Jane Tan', id: 'T0011223A', dob: '2008-03-14', mobile: '+65 9111 2222',
+      address: '21 Bedok North Ave 2, Singapore', email: 'jane.tan@example.com'
+    };
+
+    // Only these are editable — ID number and DOB stay read-only regardless of edit mode
+    const fieldIds = ['f_name', 'f_mobile', 'f_address', 'f_email'];
+
+    function loadValues() {
+      document.getElementById('f_name').value = me.name;
+      document.getElementById('f_id').value = me.id;
+      document.getElementById('f_dob').value = me.dob;
+      document.getElementById('f_mobile').value = me.mobile;
+      document.getElementById('f_address').value = me.address;
+      document.getElementById('f_email').value = me.email;
+    }
+
+    loadValues();
+
+    function setFieldsDisabled(disabled) {
+      fieldIds.forEach(id => document.getElementById(id).disabled = disabled);
+    }
+
+    function enterEditMode() {
+      setFieldsDisabled(false);
+      document.getElementById('editBtn').classList.add('d-none');
+      document.getElementById('saveBtn').classList.remove('d-none');
+      document.getElementById('cancelBtn').classList.remove('d-none');
+    }
+
+    function exitEditMode() {
+      setFieldsDisabled(true);
+      document.getElementById('editBtn').classList.remove('d-none');
+      document.getElementById('saveBtn').classList.add('d-none');
+      document.getElementById('cancelBtn').classList.add('d-none');
+    }
+
+    function cancelEdit() {
+      loadValues();
+      exitEditMode();
+    }
+
+    document.getElementById('profileForm').addEventListener('submit', function (e) {
+      e.preventDefault();
+      // TODO (Week 8): send updated field values to the student self-update endpoint
+      exitEditMode();
+    });
+  </script>
+</body>
+</html>

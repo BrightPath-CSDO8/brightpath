@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Archived Enrolments — Education Management Platform</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body>
+  <nav class="navbar navbar-light bg-light border-bottom px-3">
+    <span class="navbar-brand mb-0 h1">Education Management Platform</span>
+    <span class="text-muted">
+      Admin (Administrator) &nbsp;|&nbsp; <a href="login.html">Logout</a>
+    </span>
+  </nav>
+
+  <div class="container my-3">
+    <a href="archives.html">Back to Archives</a>
+  </div>
+
+  <div class="container">
+    <h4 class="mb-3">Archived Enrolments</h4>
+    <p class="text-muted small mb-3">Enrolment records for courses that are fully paid up and closed out.</p>
+
+    <!-- TODO (Week 8): replace hardcoded rows with real archived enrolment records from the API.
+         Note: items archived on manage_enrolments.html won't appear here yet — no shared
+         backend to persist that action across pages until Week 8. -->
+    <table class="table table-bordered align-middle" id="archiveTable">
+      <thead class="table-light">
+        <tr>
+          <th>Course name</th>
+          <th>Intake</th>
+          <th>Final enrolments</th>
+          <th>Paid</th>
+          <th>Archived on</th>
+          <th>Action</th>
+        </tr>
+      </thead>
+      <tbody id="archiveBody"></tbody>
+    </table>
+  </div>
+
+  <script>
+    let items = [
+      { name: 'History 101', intake: '2026 Term 2', enrolled: 24, paid: 24, date: '30 Jun 2026' },
+      { name: 'Art 101', intake: '2026 Term 2', enrolled: 15, paid: 15, date: '30 Jun 2026' },
+    ];
+
+    function render() {
+      const body = document.getElementById('archiveBody');
+      body.innerHTML = items.length
+        ? ''
+        : '<tr><td colspan="6" class="text-muted text-center">No archived enrolments.</td></tr>';
+      items.forEach((item, i) => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td>${item.name}</td>
+          <td>${item.intake}</td>
+          <td>${item.enrolled}</td>
+          <td>${item.paid}</td>
+          <td>${item.date}</td>
+          <td><button class="btn btn-sm btn-outline-secondary" onclick="restore(${i})">Restore</button></td>
+        `;
+        body.appendChild(tr);
+      });
+    }
+
+    function restore(index) {
+      // TODO (Week 8): call the restore endpoint (sets course's enrolment tracking back to active)
+      const item = items[index];
+      items.splice(index, 1);
+      render();
+      alert(`${item.name} restored to Manage Enrolments.`);
+    }
+
+    render();
+  </script>
+</body>
+</html>

@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Student Contact — Education Management Platform</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body>
+  <nav class="navbar navbar-light bg-light border-bottom px-3">
+    <a class="navbar-brand mb-0 h1 text-decoration-none" href="teacher_dashboard.html">Education Management Platform</a>
+    <span class="text-muted">
+      Mr. Lim (Teacher) &nbsp;|&nbsp; <a href="teacher_profile.html">My Profile</a> &nbsp;|&nbsp; <a href="messages.html?role=teacher">Messages <span class="badge bg-danger">1</span></a> &nbsp;|&nbsp; <a href="login.html">Logout</a>
+    </span>
+  </nav>
+
+  <div class="container my-3">
+    <a href="#" id="backLink">Back to Class Roster</a>
+  </div>
+
+  <div class="container mb-5" style="max-width: 520px;">
+    <h4 class="mb-1" id="pageTitle">Student Contact</h4>
+    <p class="text-muted small mb-4">Read-only. Contact details are managed by the student and Administrator.</p>
+
+    <!-- Deliberately read-only and limited: teachers see contact details and this student's record
+         in THEIR OWN class only — not full personal records, documents, or login credentials,
+         which remain Administrator-only (see view_student.html). -->
+    <table class="table table-bordered mb-4">
+      <tbody>
+        <tr><th style="width: 40%;">Name</th><td id="d_name"></td></tr>
+        <tr><th>Email address</th><td id="d_email"></td></tr>
+        <tr><th>Mobile number</th><td id="d_mobile"></td></tr>
+      </tbody>
+    </table>
+
+    <div class="card mb-4">
+      <div class="card-header" id="classHeader">In my class</div>
+      <table class="table mb-0">
+        <thead><tr><th>Assessment</th><th>Score</th><th>Feedback</th></tr></thead>
+        <tbody id="gradesBody"></tbody>
+      </table>
+    </div>
+
+    <a href="#" id="messageLink" class="btn btn-outline-primary">Send message</a>
+  </div>
+
+  <script>
+    // TODO (Week 8): fetch from the students + grades APIs, scoped to this teacher's own classes
+    const students = {
+      jane: { name: 'Jane Tan', email: 'jane.tan@example.com', mobile: '+65 9111 2222' },
+      alice: { name: 'Alice Wong', email: 'alice.wong@example.com', mobile: '+65 9333 4444' },
+    };
+
+    const courseNames = { math101: 'Math 101', math201: 'Math 201' };
+
+    // Grades this teacher has recorded, per course per student
+    const grades = {
+      math101: {
+        jane: [{ assessment: 'Midterm', score: 85, feedback: 'Good progress on algebra' }],
+        alice: [{ assessment: 'Midterm', score: 78, feedback: 'Review quadratic equations' }],
+      },
+      math201: {
+        alice: [{ assessment: 'Midterm', score: 82, feedback: 'Strong analytical work' }],
+      },
+    };
+
+    const params = new URLSearchParams(window.location.search);
+    const key = params.get('student') || 'jane';
+    const from = params.get('from') || 'math101';
+    const s = students[key] || students.jane;
+
+    document.getElementById('pageTitle').textContent = `Student Contact — ${s.name}`;
+    document.getElementById('d_name').textContent = s.name;
+    document.getElementById('d_email').textContent = s.email;
+    document.getElementById('d_mobile').textContent = s.mobile;
+    document.getElementById('backLink').href = 'class_roster.html?course=' + from;
+    document.getElementById('classHeader').textContent = `In my class — ${courseNames[from] || from}`;
+    document.getElementById('messageLink').href = 'messages.html?role=teacher';
+
+    const rows = (grades[from] && grades[from][key]) || [];
+    const body = document.getElementById('gradesBody');
+    if (rows.length === 0) {
+      body.innerHTML = '<tr><td colspan="3" class="text-muted">No grades recorded yet.</td></tr>';
+    } else {
+      rows.forEach(g => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `<td>${g.assessment}</td><td>${g.score}</td><td>${g.feedback}</td>`;
+        body.appendChild(tr);
+      });
+    }
+  </script>
+</body>
+</html>
