@@ -148,8 +148,6 @@ class Course(db.Model):
     )
     teacher = db.relationship("Teacher")
 
-    teacher = db.relationship("Teacher")
-
     created_at = db.Column(db.DateTime, nullable=False, server_default=db.func.now())
 
     __table_args__ = (
