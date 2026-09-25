@@ -7,73 +7,239 @@
 </head>
 <body>
   <nav class="navbar navbar-light bg-light border-bottom px-3">
-    <span class="navbar-brand mb-0 h1">Education Management Platform</span>
+    <a class="navbar-brand mb-0 h1 text-decoration-none" href="teacher_dashboard.html">Education Management Platform</a>
     <span class="text-muted">
-      Mr. Lim (Teacher) &nbsp;|&nbsp; <a href="teacher_profile.html">My Profile</a> &nbsp;|&nbsp; <a href="messages.html?role=teacher">Messages</a> &nbsp;|&nbsp; <a href="login.html">Logout</a>
+      <span id="teacherName">Loading...</span> (Teacher) &nbsp;|&nbsp; <a href="teacher_profile.html">My Profile</a> &nbsp;|&nbsp; <a href="messages.html?role=teacher">Messages</a> &nbsp;|&nbsp; <a href="#" id="logoutLink">Logout</a>
     </span>
   </nav>
 
-  <div class="container my-3">
-    <a href="#" id="backLink">Back to Class Roster</a>
-  </div>
+  <div class="container my-4">
 
-  <div class="container mb-4">
-    <h4 class="mb-3" id="pageTitle">Enter Grades</h4>
+    <p><a id="backLink" href="teacher_dashboard.html">&larr; Back to roster</a></p>
 
-    <div class="mb-3" style="max-width: 320px;">
-      <label class="form-label">Assessment name</label>
-      <input type="text" class="form-control" id="assessmentName" placeholder="e.g. Midterm">
-    </div>
+    <h5 class="mb-3">Enter grades — <span id="courseName">Loading...</span></h5>
 
-    <!-- TODO (Week 8): submit each row to the grades endpoint -->
-    <table class="table table-bordered align-middle">
-      <thead class="table-light">
-        <tr>
-          <th style="width: 25%;">Name</th>
-          <th style="width: 15%;">Score</th>
+    <div id="formAlert" class="alert alert-danger" style="display: none;"></div>
+    <div id="successAlert" class="alert alert-success" style="display: none;"></div>
+
+    <form id="gradesForm">
+      <div class="row mb-3" style="max-width: 600px;">
+        <div class="col">
+          <label class="form-label" for="assessmentName">Assessment name</label>
+          <input type="text" class="form-control" id="assessmentName" placeholder="e.g. Midterm Assessment" required>
+        </div>
+        <div class="col">
+          <label class="form-label" for="gradedDate">Date</label>
+          <input type="date" class="form-control" id="gradedDate" required>
+        </div>
+      </div>
+
+      <table class="table" style="table-layout: fixed; width: 100%;">
+        <thead><tr>
+          <th style="width: 25%;">Student</th>
+          <th style="width: 15%;">Score (0–100)</th>
           <th style="width: 60%;">Feedback</th>
-        </tr>
-      </thead>
-      <tbody id="rosterBody"></tbody>
-    </table>
+        </tr></thead>
+        <tbody id="studentsBody">
+          <tr><td colspan="3" class="text-muted">Loading roster...</td></tr>
+        </tbody>
+      </table>
 
-    <button class="btn btn-primary mb-4" onclick="submitGrades()">Submit</button>
+      <button type="submit" class="btn btn-primary" id="submitBtn" disabled>Submit grades</button>
+    </form>
+
   </div>
 
   <script>
-    // Demo-only lookup — same rosters already established elsewhere
-    const rosters = {
-      math101: { name: 'Math 101', students: ['Jane Tan', 'Alice Wong'] },
-      math201: { name: 'Math 201', students: ['Alice Wong'] },
-    };
-
+    const API_BASE = 'https://brightpath-backend-bagrbffzgjchfvek.malaysiawest-01.azurewebsites.net';
     const params = new URLSearchParams(window.location.search);
-    const key = params.get('course');
-    const course = rosters[key] || rosters.math101;
+    const courseId = params.get('course');
+    let roster = [];
 
-    document.getElementById('pageTitle').textContent = `Enter Grades — ${course.name}`;
-    document.getElementById('backLink').href = 'class_roster.html?course=' + key;
+    function esc(value) {
+      return String(value ?? '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+    }
 
-    const body = document.getElementById('rosterBody');
-    course.students.forEach((name, i) => {
-      const tr = document.createElement('tr');
-      tr.innerHTML = `
-        <td>${name}</td>
-        <td><input type="number" class="form-control form-control-sm" min="0" max="100" id="score_${i}"></td>
-        <td><input type="text" class="form-control form-control-sm" id="feedback_${i}"></td>
-      `;
-      body.appendChild(tr);
-    });
+    function todayIso() {
+      const d = new Date();
+      const offset = d.getTimezoneOffset();
+      return new Date(d.getTime() - offset * 60000).toISOString().slice(0, 10);
+    }
 
-    function submitGrades() {
-      const assessment = document.getElementById('assessmentName').value.trim();
-      if (!assessment) {
-        alert('Please enter an assessment name first.');
+    async function apiGet(path) {
+      const response = await fetch(`${API_BASE}${path}`, { credentials: 'include' });
+      if (!response.ok) throw new Error(`${path} returned ${response.status}`);
+      return response.json();
+    }
+
+    function showFormAlert(message) {
+      const alertEl = document.getElementById('formAlert');
+      alertEl.textContent = message;
+      alertEl.style.display = '';
+    }
+
+    function hideAlerts() {
+      document.getElementById('formAlert').style.display = 'none';
+      document.getElementById('successAlert').style.display = 'none';
+    }
+
+    async function init() {
+      if (!courseId) {
+        showFormAlert('Missing course parameter — go back to the dashboard and click a class.');
         return;
       }
-      // TODO (Week 8): call the grades endpoint with { student, course, assessment, score, feedback } per row
-      alert(`Grades for "${assessment}" (${course.name}) have been submitted.`);
+      document.getElementById('backLink').href = `class_roster.html?course=${encodeURIComponent(courseId)}`;
+
+      let me;
+      try {
+        me = await apiGet('/api/v1/auth/me');
+      } catch (err) {
+        window.location.href = 'login.html';
+        return;
+      }
+      if (me.user.role !== 'TEACHER') {
+        window.location.href = 'login.html';
+        return;
+      }
+      const teacher = me.teacher || {};
+      document.getElementById('teacherName').textContent =
+        `${teacher.salutation || ''} ${teacher.last_name || ''}`.trim() || me.user.email;
+
+      const dateInput = document.getElementById('gradedDate');
+      dateInput.value = todayIso();
+      dateInput.max = todayIso();
+
+      const studentsBody = document.getElementById('studentsBody');
+      try {
+        const [courses, students] = await Promise.all([
+          apiGet('/api/v1/teacher/courses'),
+          apiGet(`/api/v1/teacher/${encodeURIComponent(courseId)}/students`),
+        ]);
+
+        const course = courses.find(c => c.course_id_bus === courseId);
+        document.getElementById('courseName').textContent = course ? course.course_name : 'Unknown course';
+
+        if (!course) {
+          showFormAlert('You are not assigned to this course.');
+          return;
+        }
+
+        roster = students;
+
+        if (roster.length === 0) {
+          studentsBody.innerHTML = '<tr><td colspan="3" class="text-muted">No confirmed students enrolled yet.</td></tr>';
+          return;
+        }
+
+        studentsBody.innerHTML = roster.map(s => `<tr>
+          <td>${esc(s.first_name)} ${esc(s.last_name)}</td>
+          <td><input type="number" class="form-control" min="0" max="100" step="0.1" data-enrolment="${esc(s.enrolment_id_bus)}" data-field="score" required></td>
+          <td><input type="text" class="form-control" data-enrolment="${esc(s.enrolment_id_bus)}" data-field="feedback" placeholder="Optional feedback"></td>
+        </tr>`).join('');
+
+        document.getElementById('submitBtn').disabled = false;
+      } catch (err) {
+        showFormAlert('Could not load the class roster. Please refresh.');
+        console.error('Failed to load roster:', err);
+      }
     }
+
+    document.getElementById('gradesForm').addEventListener('submit', async function (e) {
+      e.preventDefault();
+      hideAlerts();
+
+      const assessmentName = document.getElementById('assessmentName').value.trim();
+      const gradedDate = document.getElementById('gradedDate').value;
+
+      if (!assessmentName) {
+        showFormAlert('Please enter an assessment name.');
+        return;
+      }
+      if (!gradedDate) {
+        showFormAlert('Please choose a date.');
+        return;
+      }
+      if (gradedDate > todayIso()) {
+        showFormAlert('Assessment date cannot be in the future.');
+        return;
+      }
+
+      const scoreInputs = document.querySelectorAll('#studentsBody input[data-field="score"]');
+      const studentsPayload = [];
+      for (const input of scoreInputs) {
+        const enrolmentId = input.getAttribute('data-enrolment');
+        const scoreValue = input.value.trim();
+        if (scoreValue === '') {
+          showFormAlert('Please enter a score for every student (0–100).');
+          return;
+        }
+        const score = Number(scoreValue);
+        if (isNaN(score) || score < 0 || score > 100) {
+          showFormAlert('Scores must be numbers between 0 and 100.');
+          return;
+        }
+        const feedbackInput = document.querySelector(`#studentsBody input[data-field="feedback"][data-enrolment="${CSS.escape(enrolmentId)}"]`);
+        const feedback = feedbackInput && feedbackInput.value.trim() ? feedbackInput.value.trim() : null;
+        studentsPayload.push({ enrolment_id_bus: enrolmentId, score: score, feedback: feedback });
+      }
+
+      if (studentsPayload.length === 0) {
+        showFormAlert('No students to grade.');
+        return;
+      }
+
+      const submitBtn = document.getElementById('submitBtn');
+      submitBtn.disabled = true;
+      submitBtn.textContent = 'Submitting...';
+
+      try {
+        const response = await fetch(`${API_BASE}/api/v1/teacher/${encodeURIComponent(courseId)}/grades`, {
+          method: 'POST',
+          credentials: 'include',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ graded_date: gradedDate, assessment_name: assessmentName, students: studentsPayload }),
+        });
+
+        const body = await response.json().catch(() => ({}));
+
+        if (!response.ok) {
+          if (body.details) {
+            const messages = Object.entries(body.details).map(([field, msg]) => `${field}: ${msg}`);
+            showFormAlert(messages.join(' | '));
+          } else {
+            showFormAlert(body.message || `Submission failed (${response.status}).`);
+          }
+          return;
+        }
+
+        const successAlert = document.getElementById('successAlert');
+        successAlert.textContent = `Grades saved: ${body.created} added, ${body.updated} updated, ${body.total} total.`;
+        successAlert.style.display = '';
+      } catch (err) {
+        showFormAlert('Network error — could not reach the server. Please try again.');
+        console.error('Grades submission failed:', err);
+      } finally {
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'Submit grades';
+      }
+    });
+
+    document.getElementById('logoutLink').addEventListener('click', async function (e) {
+      e.preventDefault();
+      try {
+        await fetch(`${API_BASE}/api/v1/auth/logout`, { method: 'POST', credentials: 'include' });
+      } catch (err) {
+        console.error('Logout request failed:', err);
+      }
+      window.location.href = 'login.html';
+    });
+
+    init();
   </script>
 </body>
 </html>
