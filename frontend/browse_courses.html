@@ -9,124 +9,208 @@
   <nav class="navbar navbar-light bg-light border-bottom px-3">
     <span class="navbar-brand mb-0 h1">Education Management Platform</span>
     <span class="text-muted">
-      Jane Tan (Student) &nbsp;|&nbsp; <a href="student_profile.html">My Profile</a> &nbsp;|&nbsp; <a href="messages.html?role=student">Messages</a> &nbsp;|&nbsp; <a href="login.html">Logout</a>
+      <span id="studentName">Loading...</span> (Student) &nbsp;|&nbsp; <a href="student_profile.html">My Profile</a> &nbsp;|&nbsp; <a href="messages.html?role=student">Messages</a> &nbsp;|&nbsp; <a href="#" id="logoutLink">Logout</a>
     </span>
   </nav>
 
   <div class="container my-3">
-    <a href="student_dashboard.html">Back to Dashboard</a>
+    <a href="student_dashboard.html">&larr; Back to Dashboard</a>
   </div>
 
   <div class="container mb-4">
     <h4 class="mb-3">Browse Courses</h4>
-    <p class="text-muted small mb-3">Courses you're already enrolled in aren't shown here. Select a course, then choose an action below.</p>
+    <p class="text-muted small mb-3">Courses you're already enrolled in (or have a pending enrolment for) aren't shown here. Select a course, then enrol.</p>
 
-    <!-- TODO (Week 8): replace hardcoded rows with available courses from the API,
-         filtered to exclude courses this student is already enrolled in -->
+    <div id="formAlert" class="alert alert-danger" style="display: none;"></div>
+    <div id="successAlert" class="alert alert-success" style="display: none;"></div>
+
     <table class="table table-bordered align-middle" id="courseTable">
       <thead class="table-light">
         <tr>
-          <th>Select</th>
+          <th style="width: 5%;">Select</th>
           <th>Course name</th>
           <th>Teacher</th>
-          <th>Intake</th>
-          <th>Date/Time</th>
-          <th>Class size</th>
-          <th>Fees</th>
+          <th>Schedule</th>
+          <th>Starts</th>
+          <th>Ends</th>
+          <th>Capacity</th>
+          <th>Fee</th>
         </tr>
       </thead>
-      <tbody>
-        <tr>
-          <td><input type="radio" name="courseSelect" value="math201"></td>
-          <td><a href="course_intro.html?course=math201">Math 201</a></td>
-          <td>Mr. Lim</td>
-          <td>2026 Term 3</td>
-          <td>Wed 10:00–12:00</td>
-          <td>22 / 25</td>
-          <td>S$280.00</td>
-        </tr>
-        <tr>
-          <td><input type="radio" name="courseSelect" value="science101"></td>
-          <td><a href="course_intro.html?course=science101">Science 101</a></td>
-          <td>Mr. Rahman</td>
-          <td>2026 Term 3</td>
-          <td>Fri 09:00–11:00</td>
-          <td>18 / 20</td>
-          <td>S$320.00</td>
-        </tr>
+      <tbody id="courseBody">
+        <tr><td colspan="8" class="text-muted">Loading...</td></tr>
       </tbody>
     </table>
 
-    <div class="d-flex gap-2">
-      <button class="btn btn-primary" onclick="enrolNow()">Enrol now</button>
-      <button class="btn btn-outline-primary" data-bs-toggle="modal" data-bs-target="#inquiryModal" onclick="openInquiry()">Send inquiry</button>
-    </div>
-  </div>
-
-  <!-- Send inquiry modal -->
-  <div class="modal fade" id="inquiryModal" tabindex="-1">
-    <div class="modal-dialog">
-      <div class="modal-content">
-        <div class="modal-header">
-          <h5 class="modal-title">Send Inquiry — <span id="inquiryCourseName"></span></h5>
-          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-        </div>
-        <div class="modal-body">
-          <label class="form-label">Message to Admin</label>
-          <textarea class="form-control" rows="4" id="inquiryMessage" placeholder="e.g. Is there a waitlist if this class is full?"></textarea>
-        </div>
-        <div class="modal-footer">
-          <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
-          <button type="button" class="btn btn-primary" onclick="sendInquiry()">Send</button>
-        </div>
-      </div>
-    </div>
+    <button class="btn btn-primary" id="enrolBtn" onclick="enrolNow()">Enrol now</button>
   </div>
 
   <script>
-    const courseNames = { math201: 'Math 201', science101: 'Science 101' };
+    const API_BASE = 'https://brightpath-backend-bagrbffzgjchfvek.malaysiawest-01.azurewebsites.net';
+    let courses = [];
+
+    function esc(value) {
+      return String(value ?? '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+    }
+
+    function formatDate(iso) {
+      if (!iso) return '—';
+      const d = new Date(iso);
+      if (isNaN(d)) return esc(iso);
+      return d.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
+    }
+
+    function formatFee(fee) {
+      const n = Number(fee);
+      return isNaN(n) ? esc(fee) : `S$${n.toFixed(2)}`;
+    }
+
+    async function apiGet(path) {
+      const response = await fetch(`${API_BASE}${path}`, { credentials: 'include' });
+      if (!response.ok) throw new Error(`${path} returned ${response.status}`);
+      return response.json();
+    }
+
+    function showFormAlert(message) {
+      const alertEl = document.getElementById('formAlert');
+      alertEl.textContent = message;
+      alertEl.style.display = '';
+    }
+
+    function hideAlerts() {
+      document.getElementById('formAlert').style.display = 'none';
+      document.getElementById('successAlert').style.display = 'none';
+    }
 
     function getSelected() {
       const checked = document.querySelector('input[name="courseSelect"]:checked');
       return checked ? checked.value : null;
     }
 
-    function enrolNow() {
-      const selected = getSelected();
-      if (!selected) {
-        alert('Please select a course first.');
+    async function loadCourses() {
+      const courseBody = document.getElementById('courseBody');
+      let me;
+      try {
+        me = await apiGet('/api/v1/auth/me');
+      } catch (err) {
+        window.location.href = 'login.html';
         return;
       }
-      // TODO (Week 8): call the enrolment endpoint instead of just showing a confirmation
-      if (confirm(`Enrol in ${courseNames[selected]}? This will be added to your dashboard once confirmed by the platform.`)) {
-        alert(`Enrolment request for ${courseNames[selected]} submitted.`);
+      if (me.user.role !== 'STUDENT') {
+        window.location.href = 'login.html';
+        return;
+      }
+      const student = me.student || {};
+      document.getElementById('studentName').textContent =
+        `${student.first_name || ''} ${student.last_name || ''}`.trim() || me.user.email;
+
+      try {
+        const [allCourses, myEnrolments, teachers] = await Promise.all([
+          apiGet('/api/v1/courses'),
+          apiGet('/api/v1/enrolments'),
+          apiGet('/api/v1/teachers'),
+        ]);
+
+        const enrolledCourseIds = new Set(myEnrolments.map(e => e.course_id_bus));
+        const teacherMap = Object.fromEntries(teachers.map(t => [t.teacher_id_bus, t]));
+
+        courses = allCourses.filter(c => !enrolledCourseIds.has(c.course_id_bus));
+
+        if (courses.length === 0) {
+          courseBody.innerHTML = '<tr><td colspan="8" class="text-muted">No open courses available to enrol in right now.</td></tr>';
+          document.getElementById('enrolBtn').disabled = true;
+          return;
+        }
+
+        courseBody.innerHTML = courses.map(c => {
+          const teacher = teacherMap[c.teacher_id_bus];
+          const teacherName = teacher ? `${teacher.salutation} ${teacher.last_name}` : '—';
+          return `<tr>
+            <td><input type="radio" name="courseSelect" value="${esc(c.course_id_bus)}"></td>
+            <td>${esc(c.course_name)}</td>
+            <td>${esc(teacherName)}</td>
+            <td>${esc(c.schedule)}</td>
+            <td>${formatDate(c.start_date)}</td>
+            <td>${formatDate(c.end_date)}</td>
+            <td>${esc(c.capacity)}</td>
+            <td>${formatFee(c.course_fee)}</td>
+          </tr>`;
+        }).join('');
+      } catch (err) {
+        courseBody.innerHTML = '<tr><td colspan="8" class="text-danger">Could not load courses. Please refresh.</td></tr>';
+        console.error('Failed to load courses:', err);
       }
     }
 
-    function openInquiry() {
+    async function enrolNow() {
+      hideAlerts();
       const selected = getSelected();
       if (!selected) {
-        // Bootstrap's data-bs-toggle already opens the modal by the time this runs, so guard here instead
-        bootstrap.Modal.getInstance(document.getElementById('inquiryModal')).hide();
-        alert('Please select a course first.');
+        showFormAlert('Please select a course first.');
         return;
       }
-      document.getElementById('inquiryCourseName').textContent = courseNames[selected];
+      const course = courses.find(c => c.course_id_bus === selected);
+      const courseName = course ? course.course_name : selected;
+
+      if (!confirm(`Enrol in ${courseName}? This will be submitted as pending until confirmed by the platform.`)) {
+        return;
+      }
+
+      const enrolBtn = document.getElementById('enrolBtn');
+      enrolBtn.disabled = true;
+      enrolBtn.textContent = 'Submitting...';
+
+      try {
+        const response = await fetch(`${API_BASE}/api/v1/enrolment`, {
+          method: 'POST',
+          credentials: 'include',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ course_id_bus: selected }),
+        });
+
+        const body = await response.json().catch(() => ({}));
+
+        if (!response.ok) {
+          if (response.status === 409) {
+            showFormAlert(`You're already enrolled (or have a pending enrolment) in ${courseName}.`);
+          } else if (response.status === 404) {
+            showFormAlert(`${courseName} is no longer open for enrolment.`);
+          } else {
+            showFormAlert(body.message || `Enrolment failed (${response.status}).`);
+          }
+          return;
+        }
+
+        const successAlert = document.getElementById('successAlert');
+        successAlert.textContent = `Enrolment request for ${courseName} submitted — status: ${body.status}.`;
+        successAlert.style.display = '';
+
+        await loadCourses();
+      } catch (err) {
+        showFormAlert('Network error — could not reach the server. Please try again.');
+        console.error('Enrolment submission failed:', err);
+      } finally {
+        enrolBtn.disabled = false;
+        enrolBtn.textContent = 'Enrol now';
+      }
     }
 
-    function sendInquiry() {
-      const selected = getSelected();
-      const message = document.getElementById('inquiryMessage').value.trim();
-      if (!message) {
-        alert('Please enter a message first.');
-        return;
+    document.getElementById('logoutLink').addEventListener('click', async function (e) {
+      e.preventDefault();
+      try {
+        await fetch(`${API_BASE}/api/v1/auth/logout`, { method: 'POST', credentials: 'include' });
+      } catch (err) {
+        console.error('Logout request failed:', err);
       }
-      // TODO (Week 8): send via the real messaging endpoint (same mechanism as messages.html), addressed to Admin
-      document.getElementById('inquiryMessage').value = '';
-      bootstrap.Modal.getInstance(document.getElementById('inquiryModal')).hide();
-      alert(`Your inquiry about ${courseNames[selected]} has been sent to Admin.`);
-    }
+      window.location.href = 'login.html';
+    });
+
+    loadCourses();
   </script>
-  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>
