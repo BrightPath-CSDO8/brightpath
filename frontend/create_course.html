@@ -9,96 +9,237 @@
   <nav class="navbar navbar-light bg-light border-bottom px-3">
     <span class="navbar-brand mb-0 h1">Education Management Platform</span>
     <span class="text-muted">
-      Admin (Administrator) &nbsp;|&nbsp; <a href="login.html">Logout</a>
+      <span id="adminName">Loading...</span> (Administrator) &nbsp;|&nbsp; <a href="#" id="logoutLink">Logout</a>
     </span>
   </nav>
 
   <div class="container my-3">
-    <a href="manage_courses.html">Back to Manage Courses</a>
+    <a href="admin_dashboard.html">&larr; Back to dashboard</a>
   </div>
 
   <div class="container mb-5" style="max-width: 640px;">
-    <h4 class="mb-4">Create Course</h4>
+    <h4 class="mb-1">Create Course</h4>
+    <p class="text-muted small mb-4">New courses are created with status <strong>PENDING</strong> and won't appear to students until an admin sets them to OPEN.</p>
 
-    <!-- TODO (Week 8): wire to the course-creation endpoint -->
-    <form>
-      <div class="row">
-        <div class="col-md-8 mb-3">
-          <label class="form-label">Course name</label>
-          <input type="text" class="form-control">
-        </div>
-        <div class="col-md-4 mb-3">
-          <label class="form-label">Course status</label>
-          <select class="form-select">
-            <option>Active</option>
-            <option>Inactive</option>
-          </select>
-        </div>
-      </div>
+    <div id="formAlert" class="alert alert-danger" style="display: none;"></div>
+    <div id="successAlert" class="alert alert-success" style="display: none;"></div>
 
-      <div class="row">
-        <div class="col-md-6 mb-3">
-          <label class="form-label">Intake</label>
-          <input type="text" class="form-control" placeholder="e.g. 2026 Term 3">
-        </div>
-        <div class="col-md-6 mb-3">
-          <label class="form-label">Max enrolments</label>
-          <input type="number" class="form-control" min="1">
-        </div>
+    <form id="courseForm">
+      <div class="mb-3">
+        <label class="form-label" for="courseName">Course name</label>
+        <input type="text" class="form-control" id="courseName" required>
       </div>
 
       <div class="mb-3">
-        <label class="form-label">Course fee</label>
-        <div class="input-group">
-          <span class="input-group-text">S$</span>
-          <input type="number" class="form-control" min="0" step="0.01">
-        </div>
+        <label class="form-label" for="description">Description</label>
+        <textarea class="form-control" id="description" rows="2" required></textarea>
       </div>
 
       <div class="mb-3">
-        <label class="form-label">Course Date(s)</label>
-        <input type="text" class="form-control" placeholder="e.g. Every Mon &amp; Wed, 1 Sep – 15 Nov 2026">
+        <label class="form-label" for="schedule">Schedule</label>
+        <input type="text" class="form-control" id="schedule" placeholder="e.g. Monday 9am - 11am" required>
       </div>
 
       <div class="row">
         <div class="col-md-6 mb-3">
-          <label class="form-label">Course Time — Start</label>
-          <input type="time" class="form-control">
+          <label class="form-label" for="startDate">Start date</label>
+          <input type="date" class="form-control" id="startDate" required>
         </div>
         <div class="col-md-6 mb-3">
-          <label class="form-label">Course Time — End</label>
-          <input type="time" class="form-control">
+          <label class="form-label" for="endDate">End date</label>
+          <input type="date" class="form-control" id="endDate" required>
         </div>
       </div>
 
       <div class="row">
         <div class="col-md-6 mb-3">
-          <label class="form-label">Teacher Assigned</label>
-          <!-- TODO (Week 8): populate from the teachers API instead of this fixed list -->
-          <select class="form-select">
-            <option>Mr. Lim</option>
-            <option>Ms. Ong</option>
-            <option>Mr. Rahman</option>
+          <label class="form-label" for="capacity">Capacity</label>
+          <input type="number" class="form-control" id="capacity" min="1" required>
+        </div>
+        <div class="col-md-6 mb-3">
+          <label class="form-label" for="courseFee">Course fee</label>
+          <div class="input-group">
+            <span class="input-group-text">S$</span>
+            <input type="number" class="form-control" id="courseFee" min="0" step="0.01" required>
+          </div>
+        </div>
+      </div>
+
+      <div class="row">
+        <div class="col-md-6 mb-3">
+          <label class="form-label" for="teacherSelect">Teacher assigned</label>
+          <select class="form-select" id="teacherSelect" required>
+            <option value="">Loading...</option>
           </select>
         </div>
         <div class="col-md-6 mb-3">
-          <label class="form-label">Room Assigned</label>
-          <input type="text" class="form-control" placeholder="e.g. Room A">
+          <label class="form-label" for="classroomSelect">Room assigned</label>
+          <select class="form-select" id="classroomSelect" required>
+            <option value="">Loading...</option>
+          </select>
         </div>
-      </div>
-
-
-
-      <div class="mb-4">
-        <label class="form-label">Remarks / Others</label>
-        <textarea class="form-control" rows="2"></textarea>
       </div>
 
       <div class="d-flex gap-2">
-        <button type="submit" class="btn btn-primary flex-fill">Confirm</button>
-        <a href="manage_courses.html" class="btn btn-outline-secondary flex-fill">Cancel</a>
+        <button type="submit" class="btn btn-primary flex-fill" id="submitBtn" disabled>Create course</button>
+        <a href="admin_dashboard.html" class="btn btn-outline-secondary flex-fill">Cancel</a>
       </div>
     </form>
   </div>
+
+  <script>
+    const API_BASE = 'https://brightpath-backend-bagrbffzgjchfvek.malaysiawest-01.azurewebsites.net';
+
+    function esc(value) {
+      return String(value ?? '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+    }
+
+    async function apiGet(path) {
+      const response = await fetch(`${API_BASE}${path}`, { credentials: 'include' });
+      if (!response.ok) throw new Error(`${path} returned ${response.status}`);
+      return response.json();
+    }
+
+    function showFormAlert(message) {
+      const alertEl = document.getElementById('formAlert');
+      alertEl.textContent = message;
+      alertEl.style.display = '';
+    }
+
+    function hideAlerts() {
+      document.getElementById('formAlert').style.display = 'none';
+      document.getElementById('successAlert').style.display = 'none';
+    }
+
+    async function init() {
+      let me;
+      try {
+        me = await apiGet('/api/v1/auth/me');
+      } catch (err) {
+        window.location.href = 'login.html';
+        return;
+      }
+      if (me.user.role !== 'ADMIN') {
+        window.location.href = 'login.html';
+        return;
+      }
+      const admin = me.admin || {};
+      document.getElementById('adminName').textContent =
+        `${admin.first_name || ''} ${admin.last_name || ''}`.trim() || me.user.email;
+
+      try {
+        const [teachers, classrooms] = await Promise.all([
+          apiGet('/api/v1/teachers'),
+          apiGet('/api/v1/classrooms'),
+        ]);
+
+        const teacherSelect = document.getElementById('teacherSelect');
+        teacherSelect.innerHTML = teachers.length === 0
+          ? '<option value="">No teachers available</option>'
+          : '<option value="">Select a teacher</option>' + teachers.map(t =>
+              `<option value="${esc(t.teacher_id_bus)}">${esc(t.salutation)} ${esc(t.first_name)} ${esc(t.last_name)}</option>`
+            ).join('');
+
+        const classroomSelect = document.getElementById('classroomSelect');
+        classroomSelect.innerHTML = classrooms.length === 0
+          ? '<option value="">No rooms available</option>'
+          : '<option value="">Select a room</option>' + classrooms.map(c =>
+              `<option value="${esc(c.classroom_id)}">${esc(c.room_name)}</option>`
+            ).join('');
+
+        document.getElementById('submitBtn').disabled = false;
+      } catch (err) {
+        showFormAlert('Could not load teachers or rooms. Please refresh.');
+        console.error('Failed to load form data:', err);
+      }
+    }
+
+    document.getElementById('courseForm').addEventListener('submit', async function (e) {
+      e.preventDefault();
+      hideAlerts();
+
+      const startDate = document.getElementById('startDate').value;
+      const endDate = document.getElementById('endDate').value;
+
+      if (startDate && endDate && startDate >= endDate) {
+        showFormAlert('End date must be after start date.');
+        return;
+      }
+
+      const payload = {
+        course_name: document.getElementById('courseName').value.trim(),
+        description: document.getElementById('description').value.trim(),
+        schedule: document.getElementById('schedule').value.trim(),
+        start_date: startDate,
+        end_date: endDate,
+        capacity: Number(document.getElementById('capacity').value),
+        course_fee: document.getElementById('courseFee').value,
+        teacher_id_bus: document.getElementById('teacherSelect').value,
+        classroom_id: Number(document.getElementById('classroomSelect').value),
+      };
+
+      if (!payload.teacher_id_bus) {
+        showFormAlert('Please select a teacher.');
+        return;
+      }
+      if (!payload.classroom_id) {
+        showFormAlert('Please select a room.');
+        return;
+      }
+
+      const submitBtn = document.getElementById('submitBtn');
+      submitBtn.disabled = true;
+      submitBtn.textContent = 'Creating...';
+
+      try {
+        const response = await fetch(`${API_BASE}/api/v1/courses`, {
+          method: 'POST',
+          credentials: 'include',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload),
+        });
+
+        const body = await response.json().catch(() => ({}));
+
+        if (!response.ok) {
+          if (body.details) {
+            const messages = Object.entries(body.details).map(([field, msg]) => `${field}: ${msg}`);
+            showFormAlert(messages.join(' | '));
+          } else {
+            showFormAlert(body.message || `Course creation failed (${response.status}).`);
+          }
+          return;
+        }
+
+        const successAlert = document.getElementById('successAlert');
+        successAlert.textContent = `Course "${body.course_name}" created with status ${body.status}.`;
+        successAlert.style.display = '';
+        document.getElementById('courseForm').reset();
+      } catch (err) {
+        showFormAlert('Network error — could not reach the server. Please try again.');
+        console.error('Course creation failed:', err);
+      } finally {
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'Create course';
+      }
+    });
+
+    document.getElementById('logoutLink').addEventListener('click', async function (e) {
+      e.preventDefault();
+      try {
+        await fetch(`${API_BASE}/api/v1/auth/logout`, { method: 'POST', credentials: 'include' });
+      } catch (err) {
+        console.error('Logout request failed:', err);
+      }
+      window.location.href = 'login.html';
+    });
+
+    init();
+  </script>
 </body>
 </html>
