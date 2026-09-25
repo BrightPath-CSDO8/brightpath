@@ -9,7 +9,7 @@
   <nav class="navbar navbar-light bg-light border-bottom px-3">
     <span class="navbar-brand mb-0 h1">Education Management Platform</span>
     <span class="text-muted">
-      <span id="studentName">Loading...</span> (Student) &nbsp;|&nbsp; <a href="student_profile.html">My Profile</a> &nbsp;|&nbsp; <a href="messages.html?role=student">Messages <span class="badge bg-danger">1</span></a> &nbsp;|&nbsp; <a href="#" id="logoutLink">Logout</a>
+      <span id="studentName">Loading...</span> (Student) &nbsp;|&nbsp; <a href="student_profile.html">My Profile</a> &nbsp;|&nbsp; <a href="messages.html?role=student">Messages</a> &nbsp;|&nbsp; <a href="#" id="logoutLink">Logout</a>
     </span>
   </nav>
 
@@ -33,16 +33,33 @@
 
     <div class="card mb-4">
       <div class="card-header">Grades and feedback</div>
-      <div class="card-body text-muted">
-        Not available yet — no backend endpoint for grades exists.
-      </div>
+      <table class="table mb-0" style="table-layout: fixed; width: 100%;">
+        <thead><tr>
+          <th style="width: 22%;">Course</th>
+          <th style="width: 20%;">Assessment</th>
+          <th style="width: 10%;">Score</th>
+          <th style="width: 33%;">Feedback</th>
+          <th style="width: 15%;">Date</th>
+        </tr></thead>
+        <tbody id="gradesBody">
+          <tr><td colspan="5" class="text-muted">Loading...</td></tr>
+        </tbody>
+      </table>
     </div>
 
     <div class="card mb-4">
       <div class="card-header">My attendance</div>
-      <div class="card-body text-muted">
-        Not available yet — no backend endpoint for attendance exists.
-      </div>
+      <table class="table mb-0" style="table-layout: fixed; width: 100%;">
+        <thead><tr>
+          <th style="width: 25%;">Date</th>
+          <th style="width: 25%;">Course</th>
+          <th style="width: 25%;">Status</th>
+          <th style="width: 25%;">Marked by</th>
+        </tr></thead>
+        <tbody id="attendanceBody">
+          <tr><td colspan="4" class="text-muted">Loading...</td></tr>
+        </tbody>
+      </table>
     </div>
 
     <a href="browse_courses.html" class="btn btn-primary">Enrol in a course</a>
@@ -52,27 +69,38 @@
   <script>
     const API_BASE = 'https://brightpath-backend-bagrbffzgjchfvek.malaysiawest-01.azurewebsites.net';
 
+    const ATTENDANCE_BADGE = {
+      PRESENT: 'bg-success',
+      LATE: 'bg-warning text-dark',
+      ABSENT: 'bg-danger',
+    };
+
+    // Escape text before inserting it as HTML, so free-text fields
+    // (e.g. grade feedback typed by a teacher) can't inject markup or scripts.
+    function esc(value) {
+      return String(value ?? '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+    }
+
+    function formatDate(iso) {
+      if (!iso) return '—';
+      const d = new Date(iso);
+      if (isNaN(d)) return esc(iso);
+      return d.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
+    }
+
     async function apiGet(path) {
       const response = await fetch(`${API_BASE}${path}`, { credentials: 'include' });
       if (!response.ok) throw new Error(`${path} returned ${response.status}`);
       return response.json();
     }
 
-    async function loadDashboard() {
-      let me;
-      try {
-        me = await apiGet('/api/v1/auth/me');
-      } catch (err) {
-        window.location.href = 'login.html';
-        return;
-      }
-
-      const student = me.student || {};
-      document.getElementById('studentName').textContent =
-        `${student.first_name || ''} ${student.last_name || ''}`.trim() || me.user.email;
-
+    async function loadCourses() {
       const coursesBody = document.getElementById('coursesBody');
-
       try {
         const [enrolments, teachers, classrooms] = await Promise.all([
           apiGet('/api/v1/enrolments'),
@@ -86,7 +114,7 @@
         }
 
         const courses = await Promise.all(
-          enrolments.map(e => apiGet(`/api/v1/courses/${e.course_id_bus}`))
+          enrolments.map(e => apiGet(`/api/v1/courses/${encodeURIComponent(e.course_id_bus)}`))
         );
 
         const teacherMap = Object.fromEntries(teachers.map(t => [t.teacher_id_bus, t]));
@@ -100,17 +128,89 @@
           const roomName = classroom ? classroom.room_name : '—';
 
           return `<tr>
-            <td>${course.course_name}</td>
-            <td>${teacherName}</td>
-            <td>${roomName}</td>
-            <td>${course.schedule}</td>
-            <td><span class="badge bg-secondary">${enrolment.status}</span></td>
+            <td>${esc(course.course_name)}</td>
+            <td>${esc(teacherName)}</td>
+            <td>${esc(roomName)}</td>
+            <td>${esc(course.schedule)}</td>
+            <td><span class="badge bg-secondary">${esc(enrolment.status)}</span></td>
           </tr>`;
         }).join('');
       } catch (err) {
         coursesBody.innerHTML = '<tr><td colspan="5" class="text-danger">Could not load courses. Please refresh.</td></tr>';
-        console.error('Failed to load dashboard data:', err);
+        console.error('Failed to load courses:', err);
       }
+    }
+
+    async function loadGrades() {
+      const gradesBody = document.getElementById('gradesBody');
+      try {
+        const data = await apiGet('/api/v1/student/grades');
+        const grades = data.grades || [];
+
+        if (grades.length === 0) {
+          gradesBody.innerHTML = '<tr><td colspan="5" class="text-muted">No grades recorded yet.</td></tr>';
+          return;
+        }
+
+        gradesBody.innerHTML = grades.map(g => `<tr>
+          <td>${esc(g.course && g.course.course_name)}</td>
+          <td>${esc(g.assessment_name)}</td>
+          <td>${g.score === null || g.score === undefined ? '—' : esc(g.score)}</td>
+          <td>${esc(g.feedback) || '<span class="text-muted">—</span>'}</td>
+          <td>${formatDate(g.graded_date)}</td>
+        </tr>`).join('');
+      } catch (err) {
+        gradesBody.innerHTML = '<tr><td colspan="5" class="text-danger">Could not load grades. Please refresh.</td></tr>';
+        console.error('Failed to load grades:', err);
+      }
+    }
+
+    async function loadAttendance() {
+      const attendanceBody = document.getElementById('attendanceBody');
+      try {
+        const records = await apiGet('/api/v1/student/attendance');
+
+        if (records.length === 0) {
+          attendanceBody.innerHTML = '<tr><td colspan="4" class="text-muted">No attendance recorded yet.</td></tr>';
+          return;
+        }
+
+        attendanceBody.innerHTML = records.map(r => {
+          const badge = ATTENDANCE_BADGE[r.status] || 'bg-secondary';
+          const markedBy = r.teacher ? `${r.teacher.first_name} ${r.teacher.last_name}` : '—';
+          return `<tr>
+            <td>${formatDate(r.attendance_date)}</td>
+            <td>${esc(r.course_name)}</td>
+            <td><span class="badge ${badge}">${esc(r.status)}</span></td>
+            <td>${esc(markedBy)}</td>
+          </tr>`;
+        }).join('');
+      } catch (err) {
+        attendanceBody.innerHTML = '<tr><td colspan="4" class="text-danger">Could not load attendance. Please refresh.</td></tr>';
+        console.error('Failed to load attendance:', err);
+      }
+    }
+
+    async function loadDashboard() {
+      let me;
+      try {
+        me = await apiGet('/api/v1/auth/me');
+      } catch (err) {
+        window.location.href = 'login.html';
+        return;
+      }
+
+      if (me.user.role !== 'STUDENT') {
+        window.location.href = 'login.html';
+        return;
+      }
+
+      const student = me.student || {};
+      document.getElementById('studentName').textContent =
+        `${student.first_name || ''} ${student.last_name || ''}`.trim() || me.user.email;
+
+      // The three sections load independently, so one failing doesn't blank the others.
+      await Promise.all([loadCourses(), loadGrades(), loadAttendance()]);
     }
 
     document.getElementById('logoutLink').addEventListener('click', async function (e) {
