@@ -11,45 +11,100 @@
       <h4 class="mb-1">Sign Up for Student Account</h4>
       <p class="text-muted small mb-3">Self-service registration. All fields required.</p>
 
-      <!-- TODO (Week 8): wire this form to the student self-registration endpoint -->
-      <form>
+      <form id="signupForm">
         <div class="mb-3">
-          <label class="form-label">Full name</label>
-          <input type="text" class="form-control">
+          <label class="form-label">First name</label>
+          <input type="text" class="form-control" id="firstNameInput" required>
         </div>
         <div class="mb-3">
-          <label class="form-label">ID number</label>
-          <input type="text" class="form-control" placeholder="NRIC / Passport number">
-          <!-- Used as the unique lookup key elsewhere (e.g. Forgot Email), since names aren't unique -->
+          <label class="form-label">Last name</label>
+          <input type="text" class="form-control" id="lastNameInput" required>
         </div>
         <div class="mb-3">
           <label class="form-label">Date of birth</label>
-          <input type="date" class="form-control">
+          <input type="date" class="form-control" id="dobInput" required>
         </div>
         <div class="mb-3">
           <label class="form-label">Mobile number</label>
-          <input type="tel" class="form-control" placeholder="+65 XXXX XXXX">
-        </div>
-        <div class="mb-3">
-          <label class="form-label">Address</label>
-          <textarea class="form-control" rows="2"></textarea>
+          <input type="tel" class="form-control" id="mobileInput" placeholder="92345611" required>
         </div>
         <div class="mb-3">
           <label class="form-label">Email address</label>
-          <input type="email" class="form-control" placeholder="name@example.com">
+          <input type="email" class="form-control" id="emailInput" placeholder="name@example.com" required>
         </div>
         <div class="mb-3">
           <label class="form-label">Password</label>
-          <input type="password" class="form-control">
+          <input type="password" class="form-control" id="passwordInput" required>
         </div>
 
+        <div id="signupError" class="text-danger small mb-3" style="display: none;"></div>
+        <div id="signupSuccess" class="text-success small mb-3" style="display: none;"></div>
+
         <div class="d-flex gap-2 mt-4">
-          <!-- TODO (Week 8): submit to registration endpoint, then redirect to login -->
-          <button type="submit" class="btn btn-primary flex-fill">Confirm</button>
+          <button type="submit" class="btn btn-primary flex-fill" id="signupBtn">Confirm</button>
           <a href="login.html" class="btn btn-outline-secondary flex-fill">Cancel</a>
         </div>
       </form>
     </div>
   </div>
+
+  <script>
+    const API_BASE = 'https://brightpath-backend-bagrbffzgjchfvek.malaysiawest-01.azurewebsites.net';
+
+    const form = document.getElementById('signupForm');
+    const errorBox = document.getElementById('signupError');
+    const successBox = document.getElementById('signupSuccess');
+    const signupBtn = document.getElementById('signupBtn');
+
+    function showError(message) {
+      successBox.style.display = 'none';
+      errorBox.textContent = message;
+      errorBox.style.display = 'block';
+    }
+
+    form.addEventListener('submit', async function (e) {
+      e.preventDefault();
+      errorBox.style.display = 'none';
+      successBox.style.display = 'none';
+
+      const payload = {
+        first_name: document.getElementById('firstNameInput').value.trim(),
+        last_name: document.getElementById('lastNameInput').value.trim(),
+        dob: document.getElementById('dobInput').value,
+        mobile: document.getElementById('mobileInput').value.trim(),
+        email: document.getElementById('emailInput').value.trim(),
+        password: document.getElementById('passwordInput').value,
+      };
+
+      signupBtn.disabled = true;
+      signupBtn.textContent = 'Creating account...';
+
+      try {
+        const response = await fetch(`${API_BASE}/api/v1/auth/register`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+          body: JSON.stringify(payload),
+        });
+
+        if (!response.ok) {
+          const data = await response.json().catch(() => ({}));
+          showError(data.message || data.error || `Registration failed (server returned ${response.status}).`);
+          return;
+        }
+
+        successBox.textContent = 'Account created! Redirecting to login...';
+        successBox.style.display = 'block';
+        form.reset();
+        setTimeout(() => { window.location.href = 'login.html'; }, 1500);
+      } catch (err) {
+        showError('Could not reach the server. This may be a CORS/network issue.');
+        console.error('Registration request failed:', err);
+      } finally {
+        signupBtn.disabled = false;
+        signupBtn.textContent = 'Confirm';
+      }
+    });
+  </script>
 </body>
 </html>
