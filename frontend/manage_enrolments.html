@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Manage Enrolments — Education Management Platform</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body>
+  <nav class="navbar navbar-light bg-light border-bottom px-3">
+    <span class="navbar-brand mb-0 h1">Education Management Platform</span>
+    <span class="text-muted">
+      Admin (Administrator) &nbsp;|&nbsp; <a href="login.html">Logout</a>
+    </span>
+  </nav>
+
+  <div class="container my-3">
+    <a href="admin_dashboard.html">Main menu</a>
+  </div>
+
+  <div class="container">
+    <h4 class="mb-3">Enrolments by Course</h4>
+
+    <!-- TODO (Week 8): replace hardcoded rows with real counts from the enrolments API.
+         "Paid/Unpaid" is a simple manual status for now — no real payment gateway integration
+         (per the project brief, payment integration is optional/conceptual only). -->
+    <table class="table table-bordered align-middle" id="enrolmentTable">
+      <thead class="table-light">
+        <tr>
+          <th class="d-none archive-col">Select</th>
+          <th>Course name</th>
+          <th>Intake</th>
+          <th>Max enrolments</th>
+          <th>Current enrolments</th>
+          <th>Paid enrolments</th>
+          <th>Unpaid enrolments</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td class="d-none archive-col"><input type="checkbox"></td>
+          <td><a href="view_course_enrolments.html?course=math101">Math 101</a></td>
+          <td>2026 Term 3</td>
+          <td>30</td>
+          <td>28</td>
+          <td>24</td>
+          <td>4</td>
+        </tr>
+        <tr>
+          <td class="d-none archive-col"><input type="checkbox"></td>
+          <td><a href="view_course_enrolments.html?course=math201">Math 201</a></td>
+          <td>2026 Term 3</td>
+          <td>25</td>
+          <td>22</td>
+          <td>19</td>
+          <td>3</td>
+        </tr>
+        <tr>
+          <td class="d-none archive-col"><input type="checkbox"></td>
+          <td><a href="view_course_enrolments.html?course=english101">English 101</a></td>
+          <td>2026 Term 3</td>
+          <td>28</td>
+          <td>25</td>
+          <td>21</td>
+          <td>4</td>
+        </tr>
+        <tr>
+          <td class="d-none archive-col"><input type="checkbox"></td>
+          <td><a href="view_course_enrolments.html?course=science101">Science 101</a></td>
+          <td>2026 Term 3</td>
+          <td>20</td>
+          <td>18</td>
+          <td>15</td>
+          <td>3</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <div class="d-flex gap-2 mb-4">
+      <a href="create_enrolment.html" class="btn btn-primary">Create</a>
+      <button class="btn btn-outline-danger" id="archiveBtn" onclick="toggleArchiveMode()">Archive</button>
+      <button class="btn btn-danger d-none" id="confirmArchiveBtn" onclick="confirmArchive()">Confirm archive</button>
+      <button class="btn btn-outline-secondary d-none" id="cancelArchiveBtn" onclick="toggleArchiveMode()">Cancel</button>
+    </div>
+  </div>
+
+  <script>
+    // Client-side only toggle for the wireframe — real archive logic wired to the API in Week 8
+    function toggleArchiveMode() {
+      const cols = document.querySelectorAll('.archive-col');
+      const archiveBtn = document.getElementById('archiveBtn');
+      const confirmBtn = document.getElementById('confirmArchiveBtn');
+      const cancelBtn = document.getElementById('cancelArchiveBtn');
+      const nowShowing = cols[0].classList.contains('d-none');
+
+      cols.forEach(c => c.classList.toggle('d-none'));
+      archiveBtn.classList.toggle('d-none', nowShowing);
+      confirmBtn.classList.toggle('d-none', !nowShowing);
+      cancelBtn.classList.toggle('d-none', !nowShowing);
+    }
+    // TODO (Week 8): wire Confirm archive to the archive endpoint, passing selected course-intake IDs
+
+    function confirmArchive() {
+      const table = document.getElementById('enrolmentTable');
+      const checked = table.querySelectorAll('tbody input[type=checkbox]:checked');
+      if (checked.length === 0) {
+        alert('Select at least one row first.');
+        return;
+      }
+      if (confirm(`Archive ${checked.length} enrolment record(s)? They will move to Archives.`)) {
+        checked.forEach(cb => cb.closest('tr').remove());
+        toggleArchiveMode();
+      }
+    }
+  </script>
+</body>
+</html>

@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Login — Education Management Platform</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body>
+  <div class="container d-flex justify-content-center align-items-center" style="height: 100vh;">
+    <div class="card p-4 shadow-sm" style="width: 420px;">
+      <h4 class="mb-4 fs-5" style="white-space: nowrap;">Education Management Platform</h4>
+      <form id="loginForm">
+        <div class="mb-3">
+          <label class="form-label">Email</label>
+          <input type="email" class="form-control" id="emailInput" placeholder="name@example.com">
+        </div>
+        <div class="mb-3">
+          <label class="form-label">Password</label>
+          <input type="password" class="form-control" id="passwordInput">
+        </div>
+
+        <div id="loginError" class="text-danger small mb-3" style="display: none;"></div>
+
+        <button type="submit" class="btn btn-primary w-100 mb-3" id="loginBtn">Log in</button>
+
+        <div class="mb-1"><a href="forgot_password.html">Forgot password?</a></div>
+        <div class="mb-1"><a href="signup.html">Sign up for Student Account</a></div>
+        <div class="mb-1"><a href="forgot_email.html">Forgot Email?</a></div>
+
+        <div class="text-muted small mt-2">
+          Need help? <a href="mailto:admin@example.com">Contact us</a>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script>
+    const API_BASE = 'https://brightpath-backend-bagrbffzgjchfvek.malaysiawest-01.azurewebsites.net';
+
+    const roleDashboards = {
+      ADMIN: 'admin_dashboard.html',
+      TEACHER: 'teacher_dashboard.html',
+      STUDENT: 'student_dashboard.html',
+    };
+
+    const form = document.getElementById('loginForm');
+    const errorBox = document.getElementById('loginError');
+    const loginBtn = document.getElementById('loginBtn');
+
+    function showError(message) {
+      errorBox.textContent = message;
+      errorBox.style.display = 'block';
+    }
+
+    form.addEventListener('submit', async function (e) {
+      e.preventDefault();
+      errorBox.style.display = 'none';
+
+      const email = document.getElementById('emailInput').value.trim();
+      const password = document.getElementById('passwordInput').value;
+
+      loginBtn.disabled = true;
+      loginBtn.textContent = 'Logging in...';
+
+      try {
+        const response = await fetch(`${API_BASE}/api/v1/auth/login`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',   // required so the session cookie is stored cross-origin
+          body: JSON.stringify({ email, password }),
+        });
+
+        if (response.status === 401) {
+          showError('Incorrect email or password.');
+          return;
+        }
+
+        if (!response.ok) {
+          showError(`Login failed (server returned ${response.status}). Please try again.`);
+          return;
+        }
+
+        const data = await response.json();
+        const role = data.user && data.user.role;
+        const target = roleDashboards[role];
+
+        if (target) {
+          window.location.href = target;
+        } else {
+          showError('Logged in, but could not determine account role. Check console for response shape.');
+          console.log('Login response:', data);
+        }
+      } catch (err) {
+        // Most likely cause: CORS not yet enabled on the backend for this frontend's origin.
+        showError('Could not reach the server. This may be a CORS/network issue.');
+        console.error('Login request failed:', err);
+      } finally {
+        loginBtn.disabled = false;
+        loginBtn.textContent = 'Log in';
+      }
+    });
+  </script>
+</body>
+</html>

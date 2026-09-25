@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Teacher Details — Education Management Platform</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body>
+  <nav class="navbar navbar-light bg-light border-bottom px-3">
+    <span class="navbar-brand mb-0 h1">Education Management Platform</span>
+    <span class="text-muted">
+      Admin (Administrator) &nbsp;|&nbsp; <a href="view_admin.html?admin=admin">My Profile</a> &nbsp;|&nbsp; <a href="login.html">Logout</a>
+    </span>
+  </nav>
+
+  <div class="container my-3">
+    <a href="manage_teachers.html">Back to Manage Teachers</a>
+  </div>
+
+  <div class="container mb-5" style="max-width: 640px;">
+    <h4 class="mb-4" id="pageTitle">Teacher Details</h4>
+
+    <!-- TODO (Week 8): wire to the teacher-update endpoint; load real record by teacher ID instead of the demo lookup below -->
+    <form id="teacherForm">
+      <div class="row">
+        <div class="col-md-6 mb-3">
+          <label class="form-label">Teacher name</label>
+          <input type="text" class="form-control" id="f_name" disabled>
+        </div>
+        <div class="col-md-6 mb-3">
+          <label class="form-label">Designation</label>
+          <input type="text" class="form-control" id="f_designation" disabled>
+        </div>
+      </div>
+
+      <div class="row">
+        <div class="col-md-6 mb-3">
+          <label class="form-label">Employment type</label>
+          <select class="form-select" id="f_employment" disabled>
+            <option>Full Time</option>
+            <option>Part Time</option>
+          </select>
+        </div>
+        <div class="col-md-6 mb-3">
+          <label class="form-label">Status</label>
+          <select class="form-select" id="f_status" disabled>
+            <option>Active</option>
+            <option>Inactive</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="row">
+        <div class="col-md-6 mb-3">
+          <label class="form-label">Contact number</label>
+          <input type="tel" class="form-control" id="f_contact" disabled>
+        </div>
+        <div class="col-md-6 mb-3">
+          <label class="form-label">ID number</label>
+          <input type="text" class="form-control" id="f_id" disabled>
+        </div>
+      </div>
+
+      <div class="mb-3">
+        <label class="form-label">Address</label>
+        <textarea class="form-control" rows="2" id="f_address" disabled></textarea>
+      </div>
+
+      <div class="row">
+        <div class="col-md-6 mb-3">
+          <label class="form-label">Date of birth</label>
+          <input type="date" class="form-control" id="f_dob" disabled>
+        </div>
+        <div class="col-md-6 mb-3">
+          <label class="form-label">Email address</label>
+          <input type="email" class="form-control" id="f_email" disabled>
+        </div>
+      </div>
+
+      <div class="mb-3">
+        <label class="form-label">Remarks / Others</label>
+        <textarea class="form-control" rows="2" id="f_remarks" disabled></textarea>
+      </div>
+
+      <div class="mb-3">
+        <label class="form-label">Teacher photo</label>
+        <div class="d-flex align-items-center gap-3">
+          <svg id="photoPreview" width="64" height="64" viewBox="0 0 72 72" style="border-radius: 50%; background: #dee2e6; flex-shrink: 0;">
+            <circle cx="36" cy="27" r="14" fill="#adb5bd"/>
+            <path d="M10 65 Q36 42 62 65 Z" fill="#adb5bd"/>
+          </svg>
+          <input type="file" class="form-control" id="f_photo" accept="image/*" onchange="previewPhoto(event)" disabled>
+        </div>
+        <!-- TODO (Week 8): upload to Azure Blob Storage; this is a live client-side preview only -->
+      </div>
+
+      <div class="mb-4">
+        <label class="form-label">Teacher introduction</label>
+        <textarea class="form-control" rows="3" id="f_bio" disabled></textarea>
+      </div>
+
+      <div class="mb-3 p-3 border rounded bg-light">
+        <div class="fw-medium mb-1">Documents</div>
+        <a href="documents.html" id="docLink">View / upload documents</a>
+      </div>
+
+      <!-- TODO (Week 8): wire to account credential endpoints -->
+      <div class="mb-4 p-3 border rounded bg-light">
+        <div class="fw-medium mb-1">Platform login credentials</div>
+        <a href="manage_credentials.html" id="credLink">View, create, reset platform login credentials for user</a>
+      </div>
+
+      <div class="d-flex gap-2">
+        <button type="button" class="btn btn-primary flex-fill" id="editBtn" onclick="enterEditMode()">Edit</button>
+        <button type="submit" class="btn btn-primary flex-fill d-none" id="saveBtn">Save changes</button>
+        <button type="button" class="btn btn-outline-secondary flex-fill d-none" id="cancelBtn" onclick="cancelEdit()">Cancel</button>
+      </div>
+    </form>
+  </div>
+
+  <script>
+    // Demo-only lookup standing in for a real API call by teacher ID (Week 8)
+    const teachers = {
+      lim: { name: 'Mr. Lim', designation: 'Senior Teacher', employment: 'Full Time', status: 'Active',
+             contact: '+65 9123 4567', id: 'S1234567A', address: '12 Bishan Street 21, Singapore',
+             dob: '1985-04-12', email: 'lim@example.com', remarks: '',
+             bio: 'Mr. Lim has over 10 years of experience teaching mathematics, from foundational arithmetic through pre-calculus. He is known for breaking complex problems into simple, step-by-step approaches that build lasting confidence in his students.' },
+      ong: { name: 'Ms. Ong', designation: 'Teacher', employment: 'Full Time', status: 'Active',
+             contact: '+65 9234 5678', id: 'S1987654B', address: '8 Tampines Ave 5, Singapore',
+             dob: '1990-09-03', email: 'ong@example.com', remarks: '', bio: '' },
+      rahman: { name: 'Mr. Rahman', designation: 'Teacher', employment: 'Part Time', status: 'Active',
+             contact: '+65 9345 6789', id: 'S1990123C', address: '5 Jurong West St 42, Singapore',
+             dob: '1992-01-20', email: 'rahman@example.com', remarks: 'Part-time, available Mon/Wed/Fri only',
+             bio: 'Mr. Rahman specialises in secondary-level science education with a hands-on, experiment-driven approach. He is passionate about making science feel relevant and exciting through real-world examples.' }
+    };
+
+    const params = new URLSearchParams(window.location.search);
+    const key = params.get('name');
+    const t = teachers[key] || teachers.lim; // fallback so the page still renders if opened directly
+
+    const fieldIds = ['f_name', 'f_designation', 'f_employment', 'f_status', 'f_contact',
+                       'f_id', 'f_address', 'f_dob', 'f_email', 'f_remarks', 'f_photo', 'f_bio'];
+
+    function loadValues() {
+      document.getElementById('pageTitle').textContent = `Teacher Details — ${t.name}`;
+      document.getElementById('f_name').value = t.name;
+      document.getElementById('f_designation').value = t.designation;
+      document.getElementById('f_employment').value = t.employment;
+      document.getElementById('f_status').value = t.status;
+      document.getElementById('f_contact').value = t.contact;
+      document.getElementById('f_id').value = t.id;
+      document.getElementById('f_address').value = t.address;
+      document.getElementById('f_dob').value = t.dob;
+      document.getElementById('f_email').value = t.email;
+      document.getElementById('f_remarks').value = t.remarks;
+      document.getElementById('f_bio').value = t.bio;
+    }
+
+    function previewPhoto(event) {
+      const file = event.target.files[0];
+      if (!file) return;
+      const url = URL.createObjectURL(file);
+      const preview = document.getElementById('photoPreview');
+      preview.outerHTML = `<img id="photoPreview" src="${url}" width="64" height="64" style="border-radius: 50%; object-fit: cover; flex-shrink: 0;">`;
+    }
+
+    loadValues();
+    document.getElementById('credLink').href = 'manage_credentials.html?name=' + encodeURIComponent(t.name);
+    document.getElementById('docLink').href = 'documents.html?type=teacher&name=' + encodeURIComponent(t.name);
+
+    function setFieldsDisabled(disabled) {
+      fieldIds.forEach(id => document.getElementById(id).disabled = disabled);
+    }
+
+    function enterEditMode() {
+      setFieldsDisabled(false);
+      document.getElementById('editBtn').classList.add('d-none');
+      document.getElementById('saveBtn').classList.remove('d-none');
+      document.getElementById('cancelBtn').classList.remove('d-none');
+    }
+
+    function exitEditMode() {
+      setFieldsDisabled(true);
+      document.getElementById('editBtn').classList.remove('d-none');
+      document.getElementById('saveBtn').classList.add('d-none');
+      document.getElementById('cancelBtn').classList.add('d-none');
+    }
+
+    function cancelEdit() {
+      loadValues(); // discard any unsaved edits, revert to original values
+      exitEditMode();
+    }
+
+    document.getElementById('teacherForm').addEventListener('submit', function (e) {
+      e.preventDefault();
+      // TODO (Week 8): send updated field values to the teacher-update endpoint
+      exitEditMode();
+    });
+  </script>
+</body>
+</html>

@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Class Group Chat — Education Management Platform</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <style>
+    .chat-scroll { height: 55vh; overflow-y: auto; background: #f5f6f8; border-radius: 8px; padding: 16px; }
+    .msg-row { display: flex; margin-bottom: 14px; }
+    .msg-row.mine { justify-content: flex-end; }
+    .bubble { max-width: 72%; padding: 8px 12px; border-radius: 14px; background: white; box-shadow: 0 1px 1px rgba(0,0,0,.08); }
+    .msg-row.mine .bubble { background: #d9ecff; }
+    .bubble.tag-announcement { background: #fff6da; border: 1px solid #f0dfa0; }
+    .bubble.tag-important { background: #fde8e8; border: 1px solid #f0b4b4; }
+    .sender { font-size: 12px; font-weight: 600; color: #555; margin-bottom: 2px; }
+    .timestamp { font-size: 11px; color: #999; margin-top: 4px; }
+    .tag-badge { font-size: 10px; }
+    .mod-controls { font-size: 11px; margin-top: 6px; display: flex; gap: 8px; }
+    .mod-controls a { color: #666; text-decoration: none; }
+    .mod-controls a:hover { text-decoration: underline; }
+    .pinned-strip { background: #fffbe6; border: 1px solid #f0dfa0; border-radius: 8px; padding: 10px 14px; margin-bottom: 12px; font-size: 13px; }
+  </style>
+</head>
+<body>
+  <nav class="navbar navbar-light bg-light border-bottom px-3">
+    <a class="navbar-brand mb-0 h1 text-decoration-none" href="#" id="brandLink">Education Management Platform</a>
+    <span class="text-muted" id="navUser"></span>
+  </nav>
+
+  <div class="container my-3">
+    <a href="#" id="backLink">Back</a>
+  </div>
+
+  <div class="container mb-5" style="max-width: 680px;" id="pageBody">
+    <div class="d-flex justify-content-between align-items-center mb-2">
+      <h4 class="mb-0" id="pageTitle">Class Group Chat</h4>
+      <span class="text-muted small" id="participantCount"></span>
+    </div>
+
+    <div id="pinnedStrip"></div>
+
+    <div class="chat-scroll" id="chatScroll"></div>
+
+    <form id="sendForm" class="d-flex gap-2 mt-3">
+      <button type="button" class="btn btn-outline-secondary" disabled title="Not part of this prototype">📎 Attach</button>
+      <input type="text" class="form-control" id="messageInput" placeholder="Type a message...">
+      <button type="submit" class="btn btn-primary">Send</button>
+    </form>
+
+    <div class="mt-4">
+      <a class="text-decoration-none" data-bs-toggle="collapse" href="#participantsList">View participants (<span id="pCountInline"></span>)</a>
+      <div class="collapse mt-2" id="participantsList">
+        <ul class="list-group" id="participantsUl"></ul>
+      </div>
+    </div>
+  </div>
+
+  <div class="container mb-5 d-none" id="accessDenied" style="max-width: 480px;">
+    <div class="alert alert-warning">
+      You don't have access to this group chat.
+    </div>
+    <a href="#" id="deniedBackLink" class="btn btn-primary">Back to Group Chats</a>
+  </div>
+
+  <script>
+  (function () {
+    // ---- Demo-only, in-memory. TODO (Week 8): real version needs a Group table (or reuse
+    // Enrolment/assigned-classes as membership), and this access check must also happen
+    // server-side — a client-side check alone doesn't actually stop anyone determined. ----
+    const params = new URLSearchParams(window.location.search);
+    const courseKey = params.get('course') || 'math101';
+    const role = params.get('role') || 'student'; // 'admin' | 'teacher' | 'student'
+    const myName = { admin: 'Admin', teacher: 'Mr. Lim', student: 'Jane Tan' }[role] || 'Jane Tan';
+    const roleLabel = { admin: 'Administrator', teacher: 'Teacher', student: 'Student' }[role] || 'Student';
+    const dashboardLink = { admin: 'admin_dashboard.html', teacher: 'teacher_dashboard.html', student: 'student_dashboard.html' }[role] || 'student_dashboard.html';
+
+    document.getElementById('navUser').innerHTML = `${myName} (${roleLabel}) &nbsp;|&nbsp; <a href="login.html">Logout</a>`;
+    document.getElementById('brandLink').href = dashboardLink;
+    document.getElementById('backLink').href = 'group_chats.html?role=' + role;
+    document.getElementById('deniedBackLink').href = 'group_chats.html?role=' + role;
+
+    const classes = {
+      math101: { name: 'Math 101', teacher: 'Mr. Lim', students: ['Jane Tan', 'Alice Wong'] },
+      math201: { name: 'Math 201', teacher: 'Mr. Lim', students: ['Alice Wong'] },
+      english101: { name: 'English 101', teacher: 'Ms. Ong', students: ['Jane Tan', 'Bryan Ng'] },
+      science101: { name: 'Science 101', teacher: 'Mr. Rahman', students: ['Alice Wong'] },
+    };
+
+    // Access control — same scoping as group_chats.html: Admin sees everything,
+    // Teacher/Student only see classes they're actually part of.
+    const myAllowedCourses = {
+      admin: Object.keys(classes),
+      teacher: ['math101', 'math201'],
+      student: ['math101', 'english101'],
+    }[role] || [];
+
+    if (!myAllowedCourses.includes(courseKey)) {
+      document.getElementById('pageBody').classList.add('d-none');
+      document.getElementById('accessDenied').classList.remove('d-none');
+      return; // stop here — no error thrown, just exit cleanly
+    }
+
+    const cls = classes[courseKey];
+    const participants = [cls.teacher, ...cls.students];
+    const canModerate = (role === 'admin' || role === 'teacher');
+
+    document.getElementById('pageTitle').textContent = `${cls.name} — Class Group Chat`;
+    document.getElementById('participantCount').textContent = `${participants.length} participants`;
+    document.getElementById('pCountInline').textContent = participants.length;
+
+    const ul = document.getElementById('participantsUl');
+    participants.forEach(p => {
+      const li = document.createElement('li');
+      li.className = 'list-group-item';
+      li.textContent = p + (p === cls.teacher ? ' (Teacher)' : ' (Student)');
+      ul.appendChild(li);
+    });
+
+    // tag: null | 'announcement' | 'important'. pinned: boolean.
+    let messages = [
+      { sender: cls.teacher, text: `Welcome to the ${cls.name} group chat! Use this for class discussion and updates.`, time: '25 Aug, 9:02 AM', tag: 'announcement', pinned: true },
+      { sender: cls.students[0], text: 'Quick question — is the homework due before or after class on Monday?', time: '25 Aug, 6:14 PM', tag: null, pinned: false },
+      { sender: cls.teacher, text: 'Before class, please — 10am latest.', time: '25 Aug, 7:30 PM', tag: null, pinned: false },
+      { sender: cls.teacher, text: `Reminder: ${cls.name} on Wed is moved to Room B this week only (projector repair in Room A).`, time: '26 Aug, 8:00 AM', tag: 'important', pinned: true },
+    ];
+
+    function tagBadge(tag) {
+      if (tag === 'announcement') return '<span class="badge bg-warning text-dark tag-badge">Announcement</span>';
+      if (tag === 'important') return '<span class="badge bg-danger tag-badge">Important</span>';
+      return '';
+    }
+
+    function renderPinnedStrip() {
+      const pinned = messages.filter(m => m.pinned);
+      const el = document.getElementById('pinnedStrip');
+      if (pinned.length === 0) { el.innerHTML = ''; return; }
+      el.innerHTML = `<div class="pinned-strip">📌 <strong>Pinned:</strong> ` +
+        pinned.map(m => `${tagBadge(m.tag)} ${m.text.length > 60 ? m.text.slice(0, 60) + '…' : m.text}`).join(' &nbsp;•&nbsp; ') +
+        `</div>`;
+    }
+
+    function render() {
+      renderPinnedStrip();
+      const scroll = document.getElementById('chatScroll');
+      scroll.innerHTML = '';
+      messages.forEach((m, i) => {
+        const mine = m.sender === myName;
+        const row = document.createElement('div');
+        row.className = 'msg-row' + (mine ? ' mine' : '');
+
+        const modControls = canModerate ? `
+          <div class="mod-controls">
+            <a href="#" onclick="togglePin(${i}); return false;">${m.pinned ? 'Unpin' : '📌 Pin'}</a>
+            <a href="#" onclick="setTag(${i}, 'announcement'); return false;">Mark Announcement</a>
+            <a href="#" onclick="setTag(${i}, 'important'); return false;">Mark Important</a>
+            ${m.tag ? `<a href="#" onclick="setTag(${i}, null); return false;">Clear tag</a>` : ''}
+          </div>` : '';
+
+        row.innerHTML = `
+          <div class="bubble ${m.tag ? 'tag-' + m.tag : ''}">
+            ${!mine ? `<div class="sender">${m.sender} ${tagBadge(m.tag)}</div>` : (m.tag ? `<div class="sender">${tagBadge(m.tag)}</div>` : '')}
+            <div>${m.text}</div>
+            <div class="timestamp">${m.time}${m.pinned ? ' &nbsp;📌' : ''}</div>
+            ${modControls}
+          </div>
+        `;
+        scroll.appendChild(row);
+      });
+      scroll.scrollTop = scroll.scrollHeight;
+    }
+
+    function togglePin(index) {
+      // TODO (Week 8): call the pin endpoint; restrict to Admin/Teacher server-side too
+      messages[index].pinned = !messages[index].pinned;
+      render();
+    }
+    window.togglePin = togglePin;
+
+    function setTag(index, tag) {
+      // TODO (Week 8): call the tag endpoint; restrict to Admin/Teacher server-side too
+      messages[index].tag = tag;
+      render();
+    }
+    window.setTag = setTag;
+
+    document.getElementById('sendForm').addEventListener('submit', function (e) {
+      e.preventDefault();
+      const input = document.getElementById('messageInput');
+      const text = input.value.trim();
+      if (!text) return;
+      messages.push({ sender: myName, text, time: 'Just now', tag: null, pinned: false });
+      input.value = '';
+      render();
+    });
+
+    render();
+  })();
+  </script>
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

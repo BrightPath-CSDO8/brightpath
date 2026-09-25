@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Manage Payments — Education Management Platform</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body>
+  <nav class="navbar navbar-light bg-light border-bottom px-3">
+    <span class="navbar-brand mb-0 h1">Education Management Platform</span>
+    <span class="text-muted">
+      Admin (Administrator) &nbsp;|&nbsp; <a href="login.html">Logout</a>
+    </span>
+  </nav>
+
+  <div class="container my-3">
+    <a href="admin_dashboard.html">Main menu</a>
+  </div>
+
+  <div class="container">
+    <h4 class="mb-3">Payments</h4>
+    <p class="text-muted small mb-3">Manually logged payment records — not connected to a live payment gateway.</p>
+
+    <!-- TODO (Week 8): replace hardcoded rows with data from the Payment table -->
+    <table class="table table-bordered align-middle">
+      <thead class="table-light">
+        <tr>
+          <th>Student</th>
+          <th>Course</th>
+          <th>Amount</th>
+          <th>Date paid</th>
+          <th>Method</th>
+          <th>Receipt number</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><a href="view_student.html?student=jane">Jane Tan</a></td>
+          <td>Math 101</td>
+          <td>S$280.00</td>
+          <td>18 Aug 2026</td>
+          <td>PayNow</td>
+          <td>RCP-1001</td>
+        </tr>
+        <tr>
+          <td><a href="view_student.html?student=jane">Jane Tan</a></td>
+          <td>English 101</td>
+          <td>S$260.00</td>
+          <td>18 Aug 2026</td>
+          <td>PayNow</td>
+          <td>RCP-1002</td>
+        </tr>
+        <tr>
+          <td><a href="view_student.html?student=bryan">Bryan Ng</a></td>
+          <td>English 101</td>
+          <td>S$260.00</td>
+          <td>20 Aug 2026</td>
+          <td>Bank Transfer</td>
+          <td>RCP-1003</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <a href="create_payment.html" class="btn btn-primary mb-4">Log payment</a>
+  </div>
+</body>
+</html>

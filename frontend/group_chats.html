@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Group Chats — Education Management Platform</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body>
+  <nav class="navbar navbar-light bg-light border-bottom px-3">
+    <a class="navbar-brand mb-0 h1 text-decoration-none" href="#" id="brandLink">Education Management Platform</a>
+    <span class="text-muted" id="navUser"></span>
+  </nav>
+
+  <div class="container my-3">
+    <a href="#" id="backLink">Back to Messages</a>
+  </div>
+
+  <div class="container mb-5" style="max-width: 600px;">
+    <h4 class="mb-3">Group Chats</h4>
+
+    <!-- TODO: real version needs a Group table (or reuse Enrolment/assigned-classes as membership) -->
+    <table class="table table-bordered align-middle" id="groupTable">
+      <thead class="table-light">
+        <tr>
+          <th class="d-none select-col">Select</th>
+          <th>Group Chat</th>
+          <th>Participants</th>
+        </tr>
+      </thead>
+      <tbody id="groupBody"></tbody>
+    </table>
+
+    <!-- Create/Delete only shown for Admin and Teacher -->
+    <div class="d-flex gap-2 mb-4 d-none" id="adminTeacherActions">
+      <a href="#" class="btn btn-primary" id="createLink">Create Group Chat</a>
+      <button class="btn btn-outline-danger" id="deleteBtn" onclick="toggleDeleteMode()">Delete Group Chat</button>
+      <button class="btn btn-danger d-none" id="confirmDeleteBtn" onclick="confirmDelete()">Confirm delete</button>
+      <button class="btn btn-outline-secondary d-none" id="cancelDeleteBtn" onclick="toggleDeleteMode()">Cancel</button>
+    </div>
+  </div>
+
+  <script>
+    // Demo-only — which group chats each role sees. TODO: real version derives this from
+    // Enrolment (students/teacher of a course) rather than a hardcoded per-role list.
+    const params = new URLSearchParams(window.location.search);
+    const role = params.get('role') || 'student';
+    const myName = { admin: 'Admin', teacher: 'Mr. Lim', student: 'Jane Tan' }[role];
+
+    document.getElementById('navUser').innerHTML = `${myName} (${role.charAt(0).toUpperCase() + role.slice(1)}) &nbsp;|&nbsp; <a href="login.html">Logout</a>`;
+    const dashboardLink = { admin: 'admin_dashboard.html', teacher: 'teacher_dashboard.html', student: 'student_dashboard.html' }[role];
+    document.getElementById('brandLink').href = dashboardLink;
+    document.getElementById('backLink').href = 'messages.html?role=' + role;
+
+    const allGroups = {
+      math101: { course: 'math101', name: 'Math 101', participants: 3, unread: 1 },   // Mr. Lim, Jane Tan, Alice Wong
+      math201: { course: 'math201', name: 'Math 201', participants: 2, unread: 1 },   // Mr. Lim, Alice Wong
+      english101: { course: 'english101', name: 'English 101', participants: 3, unread: 0 }, // Ms. Ong, Jane Tan, Bryan Ng
+      science101: { course: 'science101', name: 'Science 101', participants: 2, unread: 1 }, // Mr. Rahman, Alice Wong
+    };
+
+    // Which groups each role currently sees
+    const myGroupKeys = {
+      admin: ['math101', 'math201', 'english101', 'science101'], // Admin oversees every class
+      teacher: ['math101', 'math201'],                            // Mr. Lim's own classes
+      student: ['math101', 'english101'],                         // Jane Tan's own enrolments
+    }[role];
+
+    let groups = myGroupKeys.map(k => allGroups[k]);
+
+    function render() {
+      const body = document.getElementById('groupBody');
+      body.innerHTML = groups.length
+        ? ''
+        : '<tr><td colspan="3" class="text-muted text-center">No group chats yet.</td></tr>';
+      groups.forEach(g => {
+        const tr = document.createElement('tr');
+        const badge = g.unread > 0
+          ? `<span class="badge bg-danger rounded-pill ms-2">${g.unread}</span>`
+          : '';
+        tr.innerHTML = `
+          <td class="d-none select-col"><input type="checkbox" value="${g.course}"></td>
+          <td><a href="class_group_chat.html?course=${g.course}&role=${role}">${g.name} Group Chat</a>${badge}</td>
+          <td>${g.participants} participants</td>
+        `;
+        body.appendChild(tr);
+      });
+    }
+    render();
+
+    // Admin/Teacher only: Create + Delete
+    if (role === 'admin' || role === 'teacher') {
+      document.getElementById('adminTeacherActions').classList.remove('d-none');
+      document.getElementById('createLink').href = 'create_group_chat.html?role=' + role;
+    }
+
+    function toggleDeleteMode() {
+      const cols = document.querySelectorAll('.select-col');
+      const deleteBtn = document.getElementById('deleteBtn');
+      const confirmBtn = document.getElementById('confirmDeleteBtn');
+      const cancelBtn = document.getElementById('cancelDeleteBtn');
+      const nowShowing = cols[0].classList.contains('d-none');
+      cols.forEach(c => c.classList.toggle('d-none'));
+      deleteBtn.classList.toggle('d-none', nowShowing);
+      confirmBtn.classList.toggle('d-none', !nowShowing);
+      cancelBtn.classList.toggle('d-none', !nowShowing);
+    }
+
+    function confirmDelete() {
+      const table = document.getElementById('groupTable');
+      const checked = table.querySelectorAll('tbody input[type=checkbox]:checked');
+      if (checked.length === 0) {
+        alert('Select at least one group chat first.');
+        return;
+      }
+      // TODO (Week 8): call the group-deletion endpoint
+      if (confirm(`Delete ${checked.length} group chat(s)? This cannot be undone.`)) {
+        const toRemove = [...checked].map(cb => cb.value);
+        groups = groups.filter(g => !toRemove.includes(g.course));
+        toggleDeleteMode();
+        render();
+      }
+    }
+  </script>
+</body>
+</html>
