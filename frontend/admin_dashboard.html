@@ -97,6 +97,10 @@
         window.location.href = 'login.html';
         return;
       }
+      if (me.user.role !== 'ADMIN') {
+        window.location.href = 'login.html';
+        return;
+      }
 
       const admin = me.admin || {};
       document.getElementById('adminName').textContent =
