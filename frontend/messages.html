@@ -35,12 +35,6 @@
       <!-- Folder sidebar -->
       <div class="col-md-2 mb-3">
         <button class="btn btn-primary w-100 mb-3" onclick="openCompose()">Compose</button>
-        <div class="list-group mb-3">
-          <a href="#" id="groupChatsLink" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center">
-            Group Chats
-            <span class="badge bg-danger rounded-pill d-none" id="groupChatsBadge"></span>
-          </a>
-        </div>
         <div class="list-group" id="folderList"></div>
       </div>
 
@@ -65,15 +59,7 @@
     const profileLink = { admin: 'view_admin.html?admin=admin', teacher: 'teacher_profile.html', student: 'student_profile.html' }[role];
     const dashboardLink = { admin: 'admin_dashboard.html', teacher: 'teacher_dashboard.html', student: 'student_dashboard.html' }[role];
     document.getElementById('brandLink').href = dashboardLink;
-    document.getElementById('groupChatsLink').href = 'group_chats.html?role=' + role;
 
-    // Group chat unread counts — kept in sync with the per-group breakdown in group_chats.html
-    const groupChatUnread = { admin: 3, teacher: 2, student: 1 }[role];
-    if (groupChatUnread > 0) {
-      const badge = document.getElementById('groupChatsBadge');
-      badge.textContent = groupChatUnread;
-      badge.classList.remove('d-none');
-    }
     document.getElementById('navUser').innerHTML = `${myName} (${role.charAt(0).toUpperCase() + role.slice(1)}) &nbsp;|&nbsp; <a href="${profileLink}">My Profile</a> &nbsp;|&nbsp; <a href="login.html">Logout</a>`;
 
     const seedData = {
