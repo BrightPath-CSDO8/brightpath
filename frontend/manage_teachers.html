@@ -9,99 +9,200 @@
   <nav class="navbar navbar-light bg-light border-bottom px-3">
     <span class="navbar-brand mb-0 h1">Education Management Platform</span>
     <span class="text-muted">
-      Admin (Administrator) &nbsp;|&nbsp; <a href="login.html">Logout</a>
+      <span id="adminName">Loading...</span> (Administrator) &nbsp;|&nbsp; <a href="#" id="logoutLink">Logout</a>
     </span>
   </nav>
 
   <div class="container my-3">
-    <a href="admin_dashboard.html">Main menu</a>
+    <a href="admin_dashboard.html">&larr; Main menu</a>
   </div>
 
   <div class="container text-center mb-4">
-    <!-- TODO (Week 8): replace hardcoded count with real total from the API -->
     <div class="card d-inline-block p-3 px-4">
       <div class="fs-5">Teachers</div>
-      <div class="fs-4">10</div>
+      <div class="fs-4" id="teacherCount">—</div>
     </div>
   </div>
 
   <div class="container">
+    <div id="formAlert" class="alert alert-danger" style="display: none;"></div>
+    <div id="successAlert" class="alert alert-success" style="display: none;"></div>
+
     <table class="table table-bordered align-middle" id="teacherTable">
       <thead class="table-light">
         <tr>
-          <th class="d-none archive-col">Select</th>
           <th>Name</th>
-          <th>Employment type</th>
-          <th>Email address</th>
-          <th>Contact number</th>
+          <th>ID number</th>
+          <th>Mobile number</th>
           <th>Classes taught</th>
+          <th>Status</th>
         </tr>
       </thead>
-      <tbody>
-        <!-- TODO (Week 8): replace hardcoded rows with data from the teachers API -->
-        <tr>
-          <td class="d-none archive-col"><input type="checkbox"></td>
-          <td><a href="view_teacher.html?name=lim">Mr. Lim</a></td>
-          <td>Full Time</td>
-          <td>lim@example.com</td>
-          <td>+65 9123 4567</td>
-          <td>Math 101, Math 201</td>
-        </tr>
-        <tr>
-          <td class="d-none archive-col"><input type="checkbox"></td>
-          <td><a href="view_teacher.html?name=ong">Ms. Ong</a></td>
-          <td>Full Time</td>
-          <td>ong@example.com</td>
-          <td>+65 9234 5678</td>
-          <td>English 101</td>
-        </tr>
-        <tr>
-          <td class="d-none archive-col"><input type="checkbox"></td>
-          <td><a href="view_teacher.html?name=rahman">Mr. Rahman</a></td>
-          <td>Part Time</td>
-          <td>rahman@example.com</td>
-          <td>+65 9345 6789</td>
-          <td>Science 101</td>
-        </tr>
+      <tbody id="teacherBody">
+        <tr><td colspan="5" class="text-muted">Loading...</td></tr>
       </tbody>
     </table>
 
     <div class="d-flex gap-2 mb-4">
       <a href="create_teacher.html" class="btn btn-primary">Create account</a>
-      <button class="btn btn-outline-danger" id="archiveBtn" onclick="toggleArchiveMode()">Archive account</button>
-      <button class="btn btn-danger d-none" id="confirmArchiveBtn" onclick="confirmArchive()">Confirm archive</button>
-      <button class="btn btn-outline-secondary d-none" id="cancelArchiveBtn" onclick="toggleArchiveMode()">Cancel</button>
     </div>
   </div>
 
   <script>
-    // Client-side only toggle for the wireframe — real archive logic wired to the API in Week 8
-    function toggleArchiveMode() {
-      const cols = document.querySelectorAll('.archive-col');
-      const archiveBtn = document.getElementById('archiveBtn');
-      const confirmBtn = document.getElementById('confirmArchiveBtn');
-      const cancelBtn = document.getElementById('cancelArchiveBtn');
-      const nowShowing = cols[0].classList.contains('d-none');
+    const API_BASE = 'https://brightpath-backend-bagrbffzgjchfvek.malaysiawest-01.azurewebsites.net';
+    const STATUS_OPTIONS = ['ACTIVE', 'INACTIVE'];
+    let teachersData = [];
 
-      cols.forEach(c => c.classList.toggle('d-none'));
-      archiveBtn.classList.toggle('d-none', nowShowing);
-      confirmBtn.classList.toggle('d-none', !nowShowing);
-      cancelBtn.classList.toggle('d-none', !nowShowing);
+    function esc(value) {
+      return String(value ?? '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
     }
-    // TODO (Week 8): wire Confirm archive to the archive endpoint, passing selected teacher IDs
 
-    function confirmArchive() {
-      const table = document.getElementById('teacherTable');
-      const checked = table.querySelectorAll('tbody input[type=checkbox]:checked');
-      if (checked.length === 0) {
-        alert('Select at least one row first.');
+    async function apiGet(path) {
+      const response = await fetch(`${API_BASE}${path}`, { credentials: 'include' });
+      if (!response.ok) throw new Error(`${path} returned ${response.status}`);
+      return response.json();
+    }
+
+    function showFormAlert(message) {
+      const alertEl = document.getElementById('formAlert');
+      alertEl.textContent = message;
+      alertEl.style.display = '';
+    }
+
+    function hideAlerts() {
+      document.getElementById('formAlert').style.display = 'none';
+      document.getElementById('successAlert').style.display = 'none';
+    }
+
+    async function loadTeachers() {
+      const teacherBody = document.getElementById('teacherBody');
+      try {
+        const [teachers, courses] = await Promise.all([
+          apiGet('/api/v1/teachers'),
+          apiGet('/api/v1/auth/courses'),
+        ]);
+
+        teachersData = teachers;
+        document.getElementById('teacherCount').textContent = teachers.length;
+
+        const classesByTeacher = {};
+        courses.forEach(c => {
+          if (!classesByTeacher[c.teacher_id_bus]) classesByTeacher[c.teacher_id_bus] = [];
+          classesByTeacher[c.teacher_id_bus].push(c.course_name);
+        });
+
+        if (teachers.length === 0) {
+          teacherBody.innerHTML = '<tr><td colspan="5" class="text-muted">No teachers yet.</td></tr>';
+          return;
+        }
+
+        teacherBody.innerHTML = teachers.map(t => {
+          const classes = classesByTeacher[t.teacher_id_bus] || [];
+          const statusOptions = STATUS_OPTIONS.map(s =>
+            `<option value="${s}" ${s === t.status ? 'selected' : ''}>${s}</option>`
+          ).join('');
+
+          return `<tr>
+            <td>${esc(t.salutation)} ${esc(t.first_name)} ${esc(t.last_name)}</td>
+            <td>${esc(t.teacher_id_bus)}</td>
+            <td>${esc(t.mobile) || '—'}</td>
+            <td>${classes.length ? classes.map(esc).join(', ') : '<span class="text-muted">None</span>'}</td>
+            <td>
+              <div class="d-flex gap-1">
+                <select class="form-select form-select-sm" style="width: auto;" data-teacher="${esc(t.teacher_id_bus)}">
+                  ${statusOptions}
+                </select>
+                <button class="btn btn-sm btn-outline-primary" data-teacher="${esc(t.teacher_id_bus)}" onclick="updateStatus(this)">Save</button>
+              </div>
+            </td>
+          </tr>`;
+        }).join('');
+      } catch (err) {
+        teacherBody.innerHTML = '<tr><td colspan="5" class="text-danger">Could not load teachers. Please refresh.</td></tr>';
+        console.error('Failed to load teachers:', err);
+      }
+    }
+
+    async function updateStatus(button) {
+      hideAlerts();
+      const teacherId = button.getAttribute('data-teacher');
+      const select = document.querySelector(`select[data-teacher="${CSS.escape(teacherId)}"]`);
+      const newStatus = select.value;
+      const teacher = teachersData.find(t => t.teacher_id_bus === teacherId);
+
+      button.disabled = true;
+      button.textContent = 'Saving...';
+
+      try {
+        // Backend requires salutation + mobile + status together on every PATCH —
+        // salutation and mobile are resent unchanged since only status is editable here.
+        const response = await fetch(`${API_BASE}/api/v1/teacher/${encodeURIComponent(teacherId)}`, {
+          method: 'PATCH',
+          credentials: 'include',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ salutation: teacher.salutation, mobile: teacher.mobile, status: newStatus }),
+        });
+
+        const body = await response.json().catch(() => ({}));
+
+        if (!response.ok) {
+          if (body.details) {
+            const messages = Object.values(body.details);
+            showFormAlert(messages.join(' | '));
+          } else {
+            showFormAlert(body.message || `Status update failed (${response.status}).`);
+          }
+          return;
+        }
+
+        teacher.status = newStatus;
+        const successAlert = document.getElementById('successAlert');
+        successAlert.textContent = `${teacher.first_name} ${teacher.last_name}'s status updated to ${newStatus}.`;
+        successAlert.style.display = '';
+      } catch (err) {
+        showFormAlert('Network error — could not reach the server. Please try again.');
+        console.error('Status update failed:', err);
+      } finally {
+        button.disabled = false;
+        button.textContent = 'Save';
+      }
+    }
+
+    async function init() {
+      let me;
+      try {
+        me = await apiGet('/api/v1/auth/me');
+      } catch (err) {
+        window.location.href = 'login.html';
         return;
       }
-      if (confirm(`Archive ${checked.length} teacher(s)? They will move to Archives.`)) {
-        checked.forEach(cb => cb.closest('tr').remove());
-        toggleArchiveMode();
+      if (me.user.role !== 'ADMIN') {
+        window.location.href = 'login.html';
+        return;
       }
+      const admin = me.admin || {};
+      document.getElementById('adminName').textContent =
+        `${admin.first_name || ''} ${admin.last_name || ''}`.trim() || me.user.email;
+
+      await loadTeachers();
     }
+
+    document.getElementById('logoutLink').addEventListener('click', async function (e) {
+      e.preventDefault();
+      try {
+        await fetch(`${API_BASE}/api/v1/auth/logout`, { method: 'POST', credentials: 'include' });
+      } catch (err) {
+        console.error('Logout request failed:', err);
+      }
+      window.location.href = 'login.html';
+    });
+
+    init();
   </script>
 </body>
 </html>

@@ -9,88 +9,107 @@
   <nav class="navbar navbar-light bg-light border-bottom px-3">
     <span class="navbar-brand mb-0 h1">Education Management Platform</span>
     <span class="text-muted">
-      Admin (Administrator) &nbsp;|&nbsp; <a href="login.html">Logout</a>
+      <span id="adminName">Loading...</span> (Administrator) &nbsp;|&nbsp; <a href="#" id="logoutLink">Logout</a>
     </span>
   </nav>
 
   <div class="container my-3">
-    <a href="admin_dashboard.html">Main menu</a>
+    <a href="admin_dashboard.html">&larr; Main menu</a>
   </div>
 
   <div class="container">
     <h4 class="mb-3">Manage Admins</h4>
-    <p class="text-muted small mb-3">Visible to the Super Admin only.</p>
 
-    <!-- TODO (Week 8): replace hardcoded rows with data from the Administrator table -->
     <table class="table table-bordered align-middle" id="adminTable">
       <thead class="table-light">
         <tr>
-          <th class="d-none delete-col">Select</th>
           <th>Name</th>
-          <th>Email address</th>
-          <th>Role</th>
+          <th>Status</th>
         </tr>
       </thead>
-      <tbody>
-        <tr>
-          <td class="d-none delete-col"><input type="checkbox"></td>
-          <td><a href="view_admin.html?admin=admin">Admin</a></td>
-          <td>admin@school.edu</td>
-          <td><span class="badge bg-primary">Super Admin</span></td>
-        </tr>
-        <tr>
-          <td class="d-none delete-col"><input type="checkbox"></td>
-          <td><a href="view_admin.html?admin=priya">Priya Nair</a></td>
-          <td>priya.nair@school.edu</td>
-          <td><span class="badge bg-secondary">Admin</span></td>
-        </tr>
-        <tr>
-          <td class="d-none delete-col"><input type="checkbox"></td>
-          <td><a href="view_admin.html?admin=kenji">Kenji Sato</a></td>
-          <td>kenji.sato@school.edu</td>
-          <td><span class="badge bg-secondary">Admin</span></td>
-        </tr>
+      <tbody id="adminBody">
+        <tr><td colspan="2" class="text-muted">Loading...</td></tr>
       </tbody>
     </table>
 
     <div class="d-flex gap-2 mb-4">
       <a href="create_admin.html" class="btn btn-primary">Create account</a>
-      <button class="btn btn-outline-danger" id="deleteBtn" onclick="toggleDeleteMode()">Delete account</button>
-      <button class="btn btn-danger d-none" id="confirmDeleteBtn" onclick="confirmDelete()">Confirm delete</button>
-      <button class="btn btn-outline-secondary d-none" id="cancelDeleteBtn" onclick="toggleDeleteMode()">Cancel</button>
     </div>
   </div>
 
   <script>
-    // Client-side only for the wireframe — real delete logic wired to the API in Week 8.
-    // Note: unlike Teachers/Students/Courses/Enrolments, admin accounts are Deleted, not Archived —
-    // no Archives folder involved, matching the user's explicit "create, delete, edit" framing.
-    function toggleDeleteMode() {
-      const cols = document.querySelectorAll('.delete-col');
-      const deleteBtn = document.getElementById('deleteBtn');
-      const confirmBtn = document.getElementById('confirmDeleteBtn');
-      const cancelBtn = document.getElementById('cancelDeleteBtn');
-      const nowShowing = cols[0].classList.contains('d-none');
+    const API_BASE = 'https://brightpath-backend-bagrbffzgjchfvek.malaysiawest-01.azurewebsites.net';
 
-      cols.forEach(c => c.classList.toggle('d-none'));
-      deleteBtn.classList.toggle('d-none', nowShowing);
-      confirmBtn.classList.toggle('d-none', !nowShowing);
-      cancelBtn.classList.toggle('d-none', !nowShowing);
+    function esc(value) {
+      return String(value ?? '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
     }
 
-    function confirmDelete() {
-      const table = document.getElementById('adminTable');
-      const checked = table.querySelectorAll('tbody input[type=checkbox]:checked');
-      if (checked.length === 0) {
-        alert('Select at least one row first.');
+    async function apiGet(path) {
+      const response = await fetch(`${API_BASE}${path}`, { credentials: 'include' });
+      if (!response.ok) throw new Error(`${path} returned ${response.status}`);
+      return response.json();
+    }
+
+    function statusBadge(status) {
+      const cls = status === 'ACTIVE' ? 'bg-success' : 'bg-secondary';
+      return `<span class="badge ${cls}">${esc(status)}</span>`;
+    }
+
+    async function loadAdmins() {
+      const adminBody = document.getElementById('adminBody');
+      try {
+        const admins = await apiGet('/api/v1/admins');
+
+        if (admins.length === 0) {
+          adminBody.innerHTML = '<tr><td colspan="2" class="text-muted">No admins yet.</td></tr>';
+          return;
+        }
+
+        adminBody.innerHTML = admins.map(a => `<tr>
+          <td>${esc(a.first_name)} ${esc(a.last_name)}</td>
+          <td>${statusBadge(a.status)}</td>
+        </tr>`).join('');
+      } catch (err) {
+        adminBody.innerHTML = '<tr><td colspan="2" class="text-danger">Could not load admins. Please refresh.</td></tr>';
+        console.error('Failed to load admins:', err);
+      }
+    }
+
+    async function init() {
+      let me;
+      try {
+        me = await apiGet('/api/v1/auth/me');
+      } catch (err) {
+        window.location.href = 'login.html';
         return;
       }
-      // TODO (Week 8): call the admin-deletion endpoint. Should block deleting the current Super Admin.
-      if (confirm(`Permanently delete ${checked.length} admin account(s)? This cannot be undone.`)) {
-        checked.forEach(cb => cb.closest('tr').remove());
-        toggleDeleteMode();
+      if (me.user.role !== 'ADMIN') {
+        window.location.href = 'login.html';
+        return;
       }
+      const admin = me.admin || {};
+      document.getElementById('adminName').textContent =
+        `${admin.first_name || ''} ${admin.last_name || ''}`.trim() || me.user.email;
+
+      await loadAdmins();
     }
+
+    document.getElementById('logoutLink').addEventListener('click', async function (e) {
+      e.preventDefault();
+      try {
+        await fetch(`${API_BASE}/api/v1/auth/logout`, { method: 'POST', credentials: 'include' });
+      } catch (err) {
+        console.error('Logout request failed:', err);
+      }
+      window.location.href = 'login.html';
+    });
+
+    init();
   </script>
 </body>
 </html>
