@@ -51,36 +51,41 @@
     </div>
   </div>
 
+  <script src="config.js"></script>
   <script>
-    // ---- Demo-only data and state. TODO (Week 8): replace with real Message table + API calls. ----
-    const params = new URLSearchParams(window.location.search);
-    const role = params.get('role') || 'admin'; // 'admin' | 'teacher' | 'student'
-    const myName = { admin: 'Admin', teacher: 'Mr. Lim', student: 'Jane Tan' }[role];
-    const profileLink = { admin: 'view_admin.html?admin=admin', teacher: 'teacher_profile.html', student: 'student_profile.html' }[role];
-    const dashboardLink = { admin: 'admin_dashboard.html', teacher: 'teacher_dashboard.html', student: 'student_dashboard.html' }[role];
-    document.getElementById('brandLink').href = dashboardLink;
+    // ---- Message content is demo-only seed data. TODO (Week 8): replace with real Message table + API calls. ----
+    // Identity (who's logged in) is real, fetched from /auth/me below — only the message content itself is fake.
 
-    document.getElementById('navUser').innerHTML = `${myName} (${role.charAt(0).toUpperCase() + role.slice(1)}) &nbsp;|&nbsp; <a href="${profileLink}">My Profile</a> &nbsp;|&nbsp; <a href="login.html">Logout</a>`;
+    let myName = '';
+    let messages = [];
+    let nextId = 1;
 
-    const seedData = {
-      admin: [
-        { id: 1, folder: 'inbox', from: 'Mr. Lim', to: 'Admin', subject: 'Room change request for Math 101', body: 'Could we move Math 101 to Room B from next week? Room A projector is faulty.', date: '20 Aug 2026', read: false },
-        { id: 2, folder: 'inbox', from: 'Jane Tan', to: 'Admin', subject: 'Help: cannot access account', body: 'Hi, I forgot which email is linked to my account. Could you help?', date: '19 Aug 2026', read: false },
-        { id: 3, folder: 'sent', from: 'Admin', to: 'Ms. Ong', subject: 'Re: Term 3 timetable', body: 'Confirmed, the updated timetable is now live on the platform.', date: '18 Aug 2026', read: true },
-      ],
-      teacher: [
-        { id: 1, folder: 'inbox', from: 'Admin', to: 'Mr. Lim', subject: 'Re: Room change request', body: 'Approved — Math 101 is now assigned to Room B starting next week.', date: '21 Aug 2026', read: false },
-        { id: 2, folder: 'inbox', from: 'Bryan Ng', to: 'Mr. Lim', subject: 'Question about homework', body: 'Is question 5 supposed to use the formula from chapter 3 or chapter 4?', date: '20 Aug 2026', read: true },
-        { id: 3, folder: 'sent', from: 'Mr. Lim', to: 'Admin', subject: 'Room change request for Math 101', body: 'Could we move Math 101 to Room B from next week? Room A projector is faulty.', date: '20 Aug 2026', read: true },
-      ],
-      student: [
-        { id: 1, folder: 'inbox', from: 'Mr. Lim', to: 'Jane Tan', subject: 'Class rescheduled', body: 'Friday\'s Math 101 class is moved to 2pm instead of 9am this week only.', date: '21 Aug 2026', read: false },
-        { id: 2, folder: 'inbox', from: 'Admin', to: 'Jane Tan', subject: 'Welcome to the platform', body: 'Your enrolment is confirmed. Let us know if you have any questions.', date: '15 Aug 2026', read: true },
-      ],
-    };
+    async function apiGet(path) {
+      const response = await fetch(`${API_BASE}${path}`, { credentials: 'include' });
+      if (!response.ok) throw new Error(`${path} returned ${response.status}`);
+      return response.json();
+    }
 
-    let messages = JSON.parse(JSON.stringify(seedData[role] || seedData.admin));
-    let nextId = Math.max(...messages.map(m => m.id)) + 1;
+    function buildSeedData(roleKey, selfName) {
+      const seedData = {
+        admin: [
+          { id: 1, folder: 'inbox', from: 'Mr. Lim', to: selfName, subject: 'Room change request for Math 101', body: 'Could we move Math 101 to Room B from next week? Room A projector is faulty.', date: '20 Aug 2026', read: false },
+          { id: 2, folder: 'inbox', from: 'Jane Tan', to: selfName, subject: 'Help: cannot access account', body: 'Hi, I forgot which email is linked to my account. Could you help?', date: '19 Aug 2026', read: false },
+          { id: 3, folder: 'sent', from: selfName, to: 'Ms. Ong', subject: 'Re: Term 3 timetable', body: 'Confirmed, the updated timetable is now live on the platform.', date: '18 Aug 2026', read: true },
+        ],
+        teacher: [
+          { id: 1, folder: 'inbox', from: 'Admin', to: selfName, subject: 'Re: Room change request', body: 'Approved — Math 101 is now assigned to Room B starting next week.', date: '21 Aug 2026', read: false },
+          { id: 2, folder: 'inbox', from: 'Bryan Ng', to: selfName, subject: 'Question about homework', body: 'Is question 5 supposed to use the formula from chapter 3 or chapter 4?', date: '20 Aug 2026', read: true },
+          { id: 3, folder: 'sent', from: selfName, to: 'Admin', subject: 'Room change request for Math 101', body: 'Could we move Math 101 to Room B from next week? Room A projector is faulty.', date: '20 Aug 2026', read: true },
+        ],
+        student: [
+          { id: 1, folder: 'inbox', from: 'Mr. Lim', to: selfName, subject: 'Class rescheduled', body: 'Friday\'s Math 101 class is moved to 2pm instead of 9am this week only.', date: '21 Aug 2026', read: false },
+          { id: 2, folder: 'inbox', from: 'Admin', to: selfName, subject: 'Welcome to the platform', body: 'Your enrolment is confirmed. Let us know if you have any questions.', date: '15 Aug 2026', read: true },
+        ],
+      };
+      return seedData[roleKey] || seedData.admin;
+    }
+
     let currentFolder = 'inbox';
     let currentMsgId = null;
 
@@ -297,7 +302,41 @@
       });
     }
 
-    renderAll();
+    async function init() {
+      let me;
+      try {
+        me = await apiGet('/api/v1/auth/me');
+      } catch (err) {
+        window.location.href = 'login.html';
+        return;
+      }
+
+      const roleKey = (me.user.role || '').toLowerCase(); // 'admin' | 'teacher' | 'student'
+      const profileLink = { admin: 'view_admin.html?admin=admin', teacher: 'teacher_profile.html', student: 'student_profile.html' }[roleKey];
+      const dashboardLink = { admin: 'admin_dashboard.html', teacher: 'teacher_dashboard.html', student: 'student_dashboard.html' }[roleKey];
+      document.getElementById('brandLink').href = dashboardLink || 'login.html';
+
+      if (roleKey === 'admin') {
+        const admin = me.admin || {};
+        myName = `${admin.first_name || ''} ${admin.last_name || ''}`.trim() || me.user.email;
+      } else if (roleKey === 'teacher') {
+        const teacher = me.teacher || {};
+        myName = `${teacher.salutation || ''} ${teacher.last_name || ''}`.trim() || me.user.email;
+      } else if (roleKey === 'student') {
+        const student = me.student || {};
+        myName = `${student.first_name || ''} ${student.last_name || ''}`.trim() || me.user.email;
+      } else {
+        myName = me.user.email;
+      }
+
+      document.getElementById('navUser').innerHTML = `${myName} (${roleKey.charAt(0).toUpperCase() + roleKey.slice(1)}) &nbsp;|&nbsp; <a href="${profileLink}">My Profile</a> &nbsp;|&nbsp; <a href="login.html">Logout</a>`;
+
+      messages = buildSeedData(roleKey, myName);
+      nextId = Math.max(...messages.map(m => m.id)) + 1;
+      renderAll();
+    }
+
+    init();
   </script>
 </body>
 </html>
