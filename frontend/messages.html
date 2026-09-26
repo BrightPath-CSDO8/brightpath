@@ -312,7 +312,7 @@
       }
 
       const roleKey = (me.user.role || '').toLowerCase(); // 'admin' | 'teacher' | 'student'
-      const profileLink = { admin: 'view_admin.html?admin=admin', teacher: 'teacher_profile.html', student: 'student_profile.html' }[roleKey];
+      const profileLink = { admin: 'view_admin.html?admin=me', teacher: 'teacher_profile.html', student: 'student_profile.html' }[roleKey];
       const dashboardLink = { admin: 'admin_dashboard.html', teacher: 'teacher_dashboard.html', student: 'student_dashboard.html' }[roleKey];
       document.getElementById('brandLink').href = dashboardLink || 'login.html';
 

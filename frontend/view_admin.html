@@ -9,7 +9,7 @@
   <nav class="navbar navbar-light bg-light border-bottom px-3">
     <span class="navbar-brand mb-0 h1">Education Management Platform</span>
     <span class="text-muted">
-      Admin (Administrator) &nbsp;|&nbsp; <a href="view_admin.html?admin=admin">My Profile</a> &nbsp;|&nbsp; <a href="login.html">Logout</a>
+      <span id="navName">Loading...</span> (Administrator) &nbsp;|&nbsp; <a href="view_admin.html?admin=me">My Profile</a> &nbsp;|&nbsp; <a href="login.html">Logout</a>
     </span>
   </nav>
 
@@ -70,7 +70,14 @@
     </form>
   </div>
 
+  <script src="config.js"></script>
   <script>
+    async function apiGet(path) {
+      const response = await fetch(`${API_BASE}${path}`, { credentials: 'include' });
+      if (!response.ok) throw new Error(`${path} returned ${response.status}`);
+      return response.json();
+    }
+
     // Demo-only lookup standing in for a real API call by admin ID (Week 8)
     const admins = {
       admin: { name: 'Admin', email: 'admin@school.edu', role: 'Super Admin' },
@@ -80,7 +87,7 @@
 
     const params = new URLSearchParams(window.location.search);
     const key = params.get('admin');
-    const a = admins[key] || admins.admin; // fallback so the page still renders if opened directly
+    let a = admins[key] || admins.admin; // fallback so the page still renders if opened directly
 
     const fieldIds = ['f_name', 'f_email', 'f_role'];
 
@@ -89,13 +96,6 @@
       document.getElementById('f_name').value = a.name;
       document.getElementById('f_email').value = a.email;
       document.getElementById('f_role').value = a.role;
-    }
-
-    loadValues();
-    document.getElementById('credLink').href = 'manage_credentials.html?name=' + encodeURIComponent(a.name);
-    document.getElementById('docLink').href = 'documents.html?type=admin&name=' + encodeURIComponent(a.name);
-    if (!key || key === 'admin') {
-      document.getElementById('changePasswordSection').classList.remove('d-none');
     }
 
     function setFieldsDisabled(disabled) {
@@ -132,6 +132,37 @@
       a.role = newRole;
       exitEditMode();
     });
+
+    async function init() {
+      let me;
+      try {
+        me = await apiGet('/api/v1/auth/me');
+      } catch (err) {
+        window.location.href = 'login.html';
+        return;
+      }
+      if (me.user.role !== 'ADMIN') {
+        window.location.href = 'login.html';
+        return;
+      }
+
+      const admin = me.admin || {};
+      const myName = `${admin.first_name || ''} ${admin.last_name || ''}`.trim() || me.user.email;
+      document.getElementById('navName').textContent = myName;
+
+      if (key === 'me') {
+        a = { name: myName, email: me.user.email, role: 'Admin' };
+      }
+
+      loadValues();
+      document.getElementById('credLink').href = 'manage_credentials.html?name=' + encodeURIComponent(a.name);
+      document.getElementById('docLink').href = 'documents.html?type=admin&name=' + encodeURIComponent(a.name);
+      if (!key || key === 'admin' || key === 'me') {
+        document.getElementById('changePasswordSection').classList.remove('d-none');
+      }
+    }
+
+    init();
   </script>
 </body>
 </html>
