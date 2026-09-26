@@ -9,117 +9,170 @@
   <nav class="navbar navbar-light bg-light border-bottom px-3">
     <span class="navbar-brand mb-0 h1">Education Management Platform</span>
     <span class="text-muted">
-      Admin (Administrator) &nbsp;|&nbsp; <a href="login.html">Logout</a>
+      <span id="adminName">Loading...</span> (Administrator) &nbsp;|&nbsp; <a href="#" id="logoutLink">Logout</a>
     </span>
   </nav>
 
-  <div class="container mt-3">
-    <div class="alert alert-warning py-2 mb-0">
-      <strong>Preview only</strong> — this page isn't connected to a backend yet. Nothing here is saved or real.
-    </div>
-  </div>
-
   <div class="container my-3">
-    <a href="manage_teachers.html">Back to Manage Teachers</a>
+    <a href="manage_teachers.html">&larr; Back to Manage Teachers</a>
   </div>
 
   <div class="container mb-5" style="max-width: 640px;">
     <h4 class="mb-4">Create Teacher Account</h4>
 
-    <!-- TODO (Week 8): wire to the teacher-creation endpoint -->
-    <form>
-      <div class="row">
-        <div class="col-md-6 mb-3">
-          <label class="form-label">Teacher name</label>
-          <input type="text" class="form-control">
-        </div>
-        <div class="col-md-6 mb-3">
-          <label class="form-label">Designation</label>
-          <input type="text" class="form-control" placeholder="e.g. Senior Teacher, Head of Department">
-        </div>
-      </div>
+    <div id="formAlert" class="alert alert-danger" style="display: none;"></div>
 
+    <form id="teacherForm">
       <div class="row">
-        <div class="col-md-6 mb-3">
-          <label class="form-label">Employment type</label>
-          <select class="form-select">
-            <option>Full Time</option>
-            <option>Part Time</option>
+        <div class="col-md-4 mb-3">
+          <label class="form-label">Salutation</label>
+          <select class="form-select" id="f_salutation" required>
+            <option value="Mr">Mr</option>
+            <option value="Mrs">Mrs</option>
+            <option value="Ms">Ms</option>
+            <option value="Prof">Prof</option>
+            <option value="Dr">Dr</option>
           </select>
         </div>
-        <div class="col-md-6 mb-3">
-          <label class="form-label">Status</label>
-          <select class="form-select">
-            <option>Active</option>
-            <option>Inactive</option>
-          </select>
+        <div class="col-md-4 mb-3">
+          <label class="form-label">First name</label>
+          <input type="text" class="form-control" id="f_first_name" required>
+        </div>
+        <div class="col-md-4 mb-3">
+          <label class="form-label">Last name</label>
+          <input type="text" class="form-control" id="f_last_name" required>
         </div>
       </div>
 
       <div class="row">
         <div class="col-md-6 mb-3">
-          <label class="form-label">Contact number</label>
-          <input type="tel" class="form-control" placeholder="+65 XXXX XXXX">
-        </div>
-        <div class="col-md-6 mb-3">
-          <label class="form-label">ID number</label>
-          <input type="text" class="form-control" placeholder="NRIC / Passport number">
-        </div>
-      </div>
-
-      <div class="mb-3">
-        <label class="form-label">Address</label>
-        <textarea class="form-control" rows="2"></textarea>
-      </div>
-
-      <div class="row">
-        <div class="col-md-6 mb-3">
-          <label class="form-label">Date of birth</label>
-          <input type="date" class="form-control">
+          <label class="form-label">Mobile number</label>
+          <input type="tel" class="form-control" id="f_mobile" placeholder="8 or 9 followed by 7 digits" required>
         </div>
         <div class="col-md-6 mb-3">
           <label class="form-label">Email address</label>
-          <input type="email" class="form-control" placeholder="name@example.com">
+          <input type="email" class="form-control" id="f_email" placeholder="name@example.com" required>
         </div>
       </div>
 
-      <div class="mb-3">
-        <label class="form-label">Remarks / Others</label>
-        <textarea class="form-control" rows="2"></textarea>
-      </div>
-
-      <div class="mb-3">
-        <label class="form-label">Teacher photo</label>
-        <div class="d-flex align-items-center gap-3">
-          <svg id="photoPreview" width="64" height="64" viewBox="0 0 72 72" style="border-radius: 50%; background: #dee2e6; flex-shrink: 0;">
-            <circle cx="36" cy="27" r="14" fill="#adb5bd"/>
-            <path d="M10 65 Q36 42 62 65 Z" fill="#adb5bd"/>
-          </svg>
-          <input type="file" class="form-control" accept="image/*" onchange="previewPhoto(event)">
-        </div>
-        <!-- TODO (Week 8): upload to Azure Blob Storage; this is a live client-side preview only -->
-      </div>
-
-      <div class="mb-3">
-        <label class="form-label">Teacher introduction</label>
-        <textarea class="form-control" rows="3" placeholder="Shown to students on course introduction pages, for every course this teacher teaches"></textarea>
+      <div class="mb-4">
+        <label class="form-label">Temporary password</label>
+        <input type="text" class="form-control" id="f_password" minlength="5" required>
+        <div class="form-text">At least 5 characters. Share this with the teacher so they can log in and change it.</div>
       </div>
 
       <div class="d-flex gap-2">
-        <button type="submit" class="btn btn-primary flex-fill">Confirm</button>
+        <button type="submit" class="btn btn-primary flex-fill" id="submitBtn">Confirm</button>
         <a href="manage_teachers.html" class="btn btn-outline-secondary flex-fill">Cancel</a>
       </div>
     </form>
   </div>
 
   <script>
-    function previewPhoto(event) {
-      const file = event.target.files[0];
-      if (!file) return;
-      const url = URL.createObjectURL(file);
-      const preview = document.getElementById('photoPreview');
-      preview.outerHTML = `<img id="photoPreview" src="${url}" width="64" height="64" style="border-radius: 50%; object-fit: cover; flex-shrink: 0;">`;
+    const API_BASE = 'https://brightpath-backend-bagrbffzgjchfvek.malaysiawest-01.azurewebsites.net';
+
+    async function apiGet(path) {
+      const response = await fetch(`${API_BASE}${path}`, { credentials: 'include' });
+      if (!response.ok) throw new Error(`${path} returned ${response.status}`);
+      return response.json();
     }
+
+    function showFormAlert(message) {
+      const alertEl = document.getElementById('formAlert');
+      alertEl.textContent = message;
+      alertEl.style.display = '';
+    }
+
+    function hideFormAlert() {
+      document.getElementById('formAlert').style.display = 'none';
+    }
+
+    document.getElementById('teacherForm').addEventListener('submit', async function (e) {
+      e.preventDefault();
+      hideFormAlert();
+
+      const mobile = document.getElementById('f_mobile').value.trim();
+      if (!/^[89]\d{7}$/.test(mobile)) {
+        showFormAlert('Mobile number must start with 8 or 9 and be 8 digits long.');
+        return;
+      }
+
+      const password = document.getElementById('f_password').value;
+      if (password.length < 5) {
+        showFormAlert('Password must be at least 5 characters long.');
+        return;
+      }
+
+      const payload = {
+        salutation: document.getElementById('f_salutation').value,
+        first_name: document.getElementById('f_first_name').value.trim(),
+        last_name: document.getElementById('f_last_name').value.trim(),
+        mobile,
+        email: document.getElementById('f_email').value.trim(),
+        password,
+      };
+
+      const submitBtn = document.getElementById('submitBtn');
+      submitBtn.disabled = true;
+      submitBtn.textContent = 'Creating...';
+
+      try {
+        const response = await fetch(`${API_BASE}/api/v1/auth/staff/register`, {
+          method: 'POST',
+          credentials: 'include',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload),
+        });
+
+        const body = await response.json().catch(() => ({}));
+
+        if (!response.ok) {
+          if (body.details) {
+            showFormAlert(Object.values(body.details).join(' | '));
+          } else {
+            showFormAlert(body.message || `Could not create account (${response.status}).`);
+          }
+          return;
+        }
+
+        window.location.href = 'manage_teachers.html';
+      } catch (err) {
+        showFormAlert('Network error — could not reach the server. Please try again.');
+        console.error('Teacher creation failed:', err);
+      } finally {
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'Confirm';
+      }
+    });
+
+    async function init() {
+      let me;
+      try {
+        me = await apiGet('/api/v1/auth/me');
+      } catch (err) {
+        window.location.href = 'login.html';
+        return;
+      }
+      if (me.user.role !== 'ADMIN') {
+        window.location.href = 'login.html';
+        return;
+      }
+      const admin = me.admin || {};
+      document.getElementById('adminName').textContent =
+        `${admin.first_name || ''} ${admin.last_name || ''}`.trim() || me.user.email;
+    }
+
+    document.getElementById('logoutLink').addEventListener('click', async function (e) {
+      e.preventDefault();
+      try {
+        await fetch(`${API_BASE}/api/v1/auth/logout`, { method: 'POST', credentials: 'include' });
+      } catch (err) {
+        console.error('Logout request failed:', err);
+      }
+      window.location.href = 'login.html';
+    });
+
+    init();
   </script>
 </body>
 </html>
