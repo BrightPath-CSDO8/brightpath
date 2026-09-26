@@ -1,0 +1,50 @@
+name: BrightPath Frontend CI
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'frontend/**'
+      - '.frontend.Dockerfile'
+      - '.github/workflows/frontend-deploy.yml'
+  workflow_dispatch:
+
+env:
+  FRONTEND_IMAGE: brightpath-frontend
+
+jobs:
+  build-frontend:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      - name: Login to Azure Container Registry
+        uses: docker/login-action@v4
+        with:
+          registry: ${{ secrets.FRONTEND_ACR_LOGIN_SERVER }}
+          username: ${{ secrets.FRONTEND_ACR_USERNAME }}
+          password: ${{ secrets.FRONTEND_ACR_PASSWORD }}
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+      - name: Build and push frontend
+        uses: docker/build-push-action@v7
+        with:
+          context: .
+          file: ./.frontend.Dockerfile
+          platforms: linux/amd64
+          push: true
+          tags: |
+            ${{ secrets.FRONTEND_ACR_LOGIN_SERVER }}/${{ env.FRONTEND_IMAGE }}:${{ github.sha }}
+
+  deploy-frontend:
+    needs: build-frontend
+    runs-on: ubuntu-latest
+    steps:
+      - name: Deploy frontend image to Azure App Service
+        uses: azure/webapps-deploy@v3
+        with:
+          app-name: ${{ secrets.AZURE_FRONTEND_APP_NAME }}
+          publish-profile: ${{ secrets.AZURE_FRONTEND_WEBAPP_PUBLISH_PROFILE }}
+          images: |
+            ${{ secrets.FRONTEND_ACR_LOGIN_SERVER }}/${{ env.FRONTEND_IMAGE }}:${{ github.sha }}
