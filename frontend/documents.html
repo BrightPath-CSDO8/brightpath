@@ -62,6 +62,15 @@
     const type = params.get('type') || 'teacher';
     const name = params.get('name') || '';
 
+    function esc(value) {
+      return String(value ?? '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+    }
+
     document.getElementById('pageTitle').textContent = name ? `Documents — ${name}` : 'Documents';
 
     const fileSets = {
@@ -91,12 +100,12 @@
       tr.dataset.filename = f.name;
       tr.innerHTML = `
         <td class="d-none select-col"><input type="checkbox"></td>
-        <td>${f.name}</td>
-        <td>${f.type}</td>
-        <td>${f.size}</td>
-        <td>${f.by}</td>
-        <td>${f.created}</td>
-        <td>${f.modified}</td>
+        <td>${esc(f.name)}</td>
+        <td>${esc(f.type)}</td>
+        <td>${esc(f.size)}</td>
+        <td>${esc(f.by)}</td>
+        <td>${esc(f.created)}</td>
+        <td>${esc(f.modified)}</td>
       `;
       tbody.appendChild(tr);
     });
@@ -114,9 +123,9 @@
         row.dataset.filename = file.name;
         row.innerHTML = `
           <td class="select-col d-none"><input type="checkbox"></td>
-          <td>${file.name}</td>
-          <td>${(file.name.split('.').pop() || '').toUpperCase()}</td>
-          <td>${sizeKB}</td>
+          <td>${esc(file.name)}</td>
+          <td>${esc((file.name.split('.').pop() || '').toUpperCase())}</td>
+          <td>${esc(sizeKB)}</td>
           <td>Admin</td>
           <td>${today}</td>
           <td>${today}</td>`;
