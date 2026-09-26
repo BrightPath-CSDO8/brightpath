@@ -9,18 +9,20 @@
   <nav class="navbar navbar-light bg-light border-bottom px-3">
     <span class="navbar-brand mb-0 h1">Education Management Platform</span>
     <span class="text-muted">
-      Jane Tan (Student) &nbsp;|&nbsp; <a href="messages.html?role=student">Messages</a> &nbsp;|&nbsp; <a href="login.html">Logout</a>
+      <span id="studentName">Loading...</span> (Student) &nbsp;|&nbsp; <a href="#" id="logoutLink">Logout</a>
     </span>
   </nav>
 
   <div class="container my-3">
-    <a href="student_dashboard.html">Back to Dashboard</a>
+    <a href="student_dashboard.html">&larr; Back to Dashboard</a>
   </div>
 
   <div class="container mb-5" style="max-width: 480px;">
     <h4 class="mb-4">My Profile</h4>
 
-    <!-- TODO (Week 8): wire to the student self-update endpoint -->
+    <div id="formAlert" class="alert alert-danger" style="display: none;"></div>
+    <div id="successAlert" class="alert alert-success" style="display: none;"></div>
+
     <form id="profileForm">
       <div class="mb-3">
         <label class="form-label">Full name</label>
@@ -34,25 +36,18 @@
       </div>
       <div class="mb-3">
         <label class="form-label">Date of birth</label>
-        <input type="date" class="form-control" id="f_dob" disabled>
+        <input type="text" class="form-control" id="f_dob" disabled>
       </div>
 
       <div class="mb-3">
         <label class="form-label">Mobile number</label>
-        <input type="tel" class="form-control" id="f_mobile" disabled>
+        <input type="tel" class="form-control" id="f_mobile" placeholder="8 or 9 followed by 7 digits" disabled>
       </div>
-      <div class="mb-3">
-        <label class="form-label">Address</label>
-        <textarea class="form-control" rows="2" id="f_address" disabled></textarea>
-      </div>
+
+      <!-- Email is the login identity — not editable here -->
       <div class="mb-4">
         <label class="form-label">Email address</label>
         <input type="email" class="form-control" id="f_email" disabled>
-      </div>
-
-      <div class="mb-4 p-3 border rounded bg-light">
-        <div class="fw-medium mb-1">Password</div>
-        <a href="change_password.html?role=student">Change password</a>
       </div>
 
       <div class="d-flex gap-2">
@@ -64,54 +59,50 @@
   </div>
 
   <script>
-    // Demo-only — in the real system this loads the logged-in student's own record, no lookup needed
-    const me = {
-      name: 'Jane Tan', id: 'T0011223A', dob: '2008-03-14', mobile: '+65 9111 2222',
-      address: '21 Bedok North Ave 2, Singapore', email: 'jane.tan@example.com'
-    };
+    const API_BASE = 'https://brightpath-backend-bagrbffzgjchfvek.malaysiawest-01.azurewebsites.net';
+    let student = null;
+    let userEmail = '';
 
-    // Only these are editable — ID number and DOB stay read-only regardless of edit mode
-    const fieldIds = ['f_name', 'f_mobile', 'f_address', 'f_email'];
+    function esc(value) {
+      return String(value ?? '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+    }
+
+    function formatDate(iso) {
+      if (!iso) return '—';
+      const d = new Date(iso);
+      if (isNaN(d)) return esc(iso);
+      return d.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
+    }
+
+    async function apiGet(path) {
+      const response = await fetch(`${API_BASE}${path}`, { credentials: 'include' });
+      if (!response.ok) throw new Error(`${path} returned ${response.status}`);
+      return response.json();
+    }
+
+    function showFormAlert(message) {
+      const alertEl = document.getElementById('formAlert');
+      alertEl.textContent = message;
+      alertEl.style.display = '';
+    }
+
+    function hideAlerts() {
+      document.getElementById('formAlert').style.display = 'none';
+      document.getElementById('successAlert').style.display = 'none';
+    }
 
     function loadValues() {
-      document.getElementById('f_name').value = me.name;
-      document.getElementById('f_id').value = me.id;
-      document.getElementById('f_dob').value = me.dob;
-      document.getElementById('f_mobile').value = me.mobile;
-      document.getElementById('f_address').value = me.address;
-      document.getElementById('f_email').value = me.email;
+      document.getElementById('f_name').value = `${student.first_name} ${student.last_name}`;
+      document.getElementById('f_id').value = student.student_id_bus;
+      document.getElementById('f_dob').value = formatDate(student.dob);
+      document.getElementById('f_mobile').value = student.mobile || '';
+      document.getElementById('f_email').value = userEmail;
     }
-
-    loadValues();
 
     function setFieldsDisabled(disabled) {
-      fieldIds.forEach(id => document.getElementById(id).disabled = disabled);
-    }
-
-    function enterEditMode() {
-      setFieldsDisabled(false);
-      document.getElementById('editBtn').classList.add('d-none');
-      document.getElementById('saveBtn').classList.remove('d-none');
-      document.getElementById('cancelBtn').classList.remove('d-none');
-    }
-
-    function exitEditMode() {
-      setFieldsDisabled(true);
-      document.getElementById('editBtn').classList.remove('d-none');
-      document.getElementById('saveBtn').classList.add('d-none');
-      document.getElementById('cancelBtn').classList.add('d-none');
-    }
-
-    function cancelEdit() {
-      loadValues();
-      exitEditMode();
-    }
-
-    document.getElementById('profileForm').addEventListener('submit', function (e) {
-      e.preventDefault();
-      // TODO (Week 8): send updated field values to the student self-update endpoint
-      exitEditMode();
-    });
-  </script>
-</body>
-</html>
+      document.getElementById('f_mobile').disa
