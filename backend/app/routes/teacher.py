@@ -216,7 +216,7 @@ def update_teacher(teacher_id_bus):
 # Assigned Courses
 @teacher_bp.route("/teacher/courses", methods=["GET"])
 @login_required
-@role_required("TEACHER")
+@role_required("TEACHER", "ADMIN")
 def get_teacher_courses():
     try:
         current_user = get_current_user()

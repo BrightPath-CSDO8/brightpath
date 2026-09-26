@@ -44,6 +44,8 @@ student_bp = Blueprint("student", __name__, url_prefix="/api/v1")
 
 
 @student_bp.route("/students", methods=["GET"])
+@login_required
+@role_required("ADMIN")
 def all_students():
     students = Student.query.all()
     response = [StudentProfile.model_validate(student) for student in students]

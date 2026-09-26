@@ -16,8 +16,6 @@ classroom_bp = Blueprint("classroom", __name__)
 
 
 @classroom_bp.route("/api/v1/classrooms", methods=["GET"])
-# @login_required()
-# @role_required("ADMIN", "SUPERADMIN")
 def get_all_classrooms():
     classrooms = Classroom.query.all()
 
@@ -27,8 +25,8 @@ def get_all_classrooms():
 
 
 @classroom_bp.route("/api/v1/classroom", methods=["POST"])
-# @login_required()
-# @role_required("ADMIN", "SUPERADMIN")
+@login_required
+@role_required("ADMIN")
 def create_classroom():
     response = request.get_json(silent=True)
 

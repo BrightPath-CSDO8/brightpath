@@ -118,7 +118,6 @@ class StudentProfileRequest(BaseModel):
 
 class TeacherProfile(BaseModel):
     model_config = ConfigDict(from_attributes=True)
-    teacher_id: int
     teacher_id_bus: str
     salutation: str
     first_name: str
@@ -174,9 +173,9 @@ class TeacherRegistrationResponse(BaseModel):
 
 class TeacherProfileRequest(BaseModel):
     model_config = ConfigDict(from_attributes=True)
-    salutation: str
+    salutation: str | None = None
     mobile: str | None = Field(default=None, pattern=r"^[89]\d{7}$")
-    status: str
+    status: str | None = None
 
 
 class LoginTeacherResponse(BaseModel):

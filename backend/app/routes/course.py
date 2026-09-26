@@ -38,6 +38,8 @@ def get_courses():
 
 # GET ALL COURSES - for ADMINS only
 @course_bp.route("/auth/courses", methods=["GET"])
+@login_required
+@role_required("ADMIN")
 def admin_get_courses():
     courses = svc_get_admin_courses()
 

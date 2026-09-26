@@ -26,6 +26,8 @@ admin_bp = Blueprint("admin", __name__, url_prefix="/api/v1")
 
 
 @admin_bp.route("/admins", methods=["GET"])
+@login_required
+@role_required("ADMIN")
 def all_admins():
     admins = Admin.query.all()
 

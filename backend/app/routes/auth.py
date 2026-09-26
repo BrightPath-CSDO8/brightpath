@@ -34,6 +34,8 @@ def test_student():
 
 
 @auth_bp.route("/users", methods=["GET"])
+@login_required
+@role_required("ADMIN")
 def all_users():
     all_users = Users.query.all()
     response = [User.model_validate(user) for user in all_users]
