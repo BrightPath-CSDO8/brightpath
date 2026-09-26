@@ -9,41 +9,146 @@
   <nav class="navbar navbar-light bg-light border-bottom px-3">
     <span class="navbar-brand mb-0 h1">Education Management Platform</span>
     <span class="text-muted">
-      Admin (Administrator) &nbsp;|&nbsp; <a href="login.html">Logout</a>
+      <span id="adminName">Loading...</span> (Administrator) &nbsp;|&nbsp; <a href="#" id="logoutLink">Logout</a>
     </span>
   </nav>
 
-  <div class="container mt-3">
-    <div class="alert alert-warning py-2 mb-0">
-      <strong>Preview only</strong> — this page isn't connected to a backend yet. Nothing here is saved or real.
-    </div>
-  </div>
-
   <div class="container my-3">
-    <a href="manage_admins.html">Back to Manage Admins</a>
+    <a href="manage_admins.html">&larr; Back to Manage Admins</a>
   </div>
 
   <div class="container mb-5" style="max-width: 480px;">
     <h4 class="mb-4">Create Admin Account</h4>
 
-    <!-- New accounts are always created as regular Admin, never Super Admin — promotion happens
-         separately via Edit, and only one Super Admin can exist at a time. -->
-    <!-- TODO (Week 8): wire to the admin-creation endpoint -->
-    <form>
-      <div class="mb-3">
-        <label class="form-label">Name</label>
-        <input type="text" class="form-control">
+    <div id="formAlert" class="alert alert-danger" style="display: none;"></div>
+
+    <form id="adminCreateForm">
+      <div class="row">
+        <div class="col-md-6 mb-3">
+          <label class="form-label">First name</label>
+          <input type="text" class="form-control" id="f_first_name" required>
+        </div>
+        <div class="col-md-6 mb-3">
+          <label class="form-label">Last name</label>
+          <input type="text" class="form-control" id="f_last_name" required>
+        </div>
       </div>
-      <div class="mb-4">
+
+      <div class="mb-3">
         <label class="form-label">Email address</label>
-        <input type="email" class="form-control" placeholder="name@school.edu">
+        <input type="email" class="form-control" id="f_email" placeholder="name@school.edu" required>
+      </div>
+
+      <div class="mb-4">
+        <label class="form-label">Temporary password</label>
+        <input type="text" class="form-control" id="f_password" minlength="5" required>
+        <div class="form-text">At least 5 characters. Share this with the admin so they can log in and change it.</div>
       </div>
 
       <div class="d-flex gap-2">
-        <button type="submit" class="btn btn-primary flex-fill">Confirm</button>
+        <button type="submit" class="btn btn-primary flex-fill" id="submitBtn">Confirm</button>
         <a href="manage_admins.html" class="btn btn-outline-secondary flex-fill">Cancel</a>
       </div>
     </form>
   </div>
+
+  <script>
+    const API_BASE = 'https://brightpath-backend-bagrbffzgjchfvek.malaysiawest-01.azurewebsites.net';
+
+    async function apiGet(path) {
+      const response = await fetch(`${API_BASE}${path}`, { credentials: 'include' });
+      if (!response.ok) throw new Error(`${path} returned ${response.status}`);
+      return response.json();
+    }
+
+    function showFormAlert(message) {
+      const alertEl = document.getElementById('formAlert');
+      alertEl.textContent = message;
+      alertEl.style.display = '';
+    }
+
+    function hideFormAlert() {
+      document.getElementById('formAlert').style.display = 'none';
+    }
+
+    document.getElementById('adminCreateForm').addEventListener('submit', async function (e) {
+      e.preventDefault();
+      hideFormAlert();
+
+      const password = document.getElementById('f_password').value;
+      if (password.length < 5) {
+        showFormAlert('Password must be at least 5 characters long.');
+        return;
+      }
+
+      const payload = {
+        first_name: document.getElementById('f_first_name').value.trim(),
+        last_name: document.getElementById('f_last_name').value.trim(),
+        email: document.getElementById('f_email').value.trim(),
+        password,
+      };
+
+      const submitBtn = document.getElementById('submitBtn');
+      submitBtn.disabled = true;
+      submitBtn.textContent = 'Creating...';
+
+      try {
+        const response = await fetch(`${API_BASE}/api/v1/auth/admin/register`, {
+          method: 'POST',
+          credentials: 'include',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload),
+        });
+
+        const body = await response.json().catch(() => ({}));
+
+        if (!response.ok) {
+          if (body.details) {
+            showFormAlert(Object.values(body.details).join(' | '));
+          } else {
+            showFormAlert(body.message || `Could not create account (${response.status}).`);
+          }
+          return;
+        }
+
+        window.location.href = 'manage_admins.html';
+      } catch (err) {
+        showFormAlert('Network error — could not reach the server. Please try again.');
+        console.error('Admin creation failed:', err);
+      } finally {
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'Confirm';
+      }
+    });
+
+    async function init() {
+      let me;
+      try {
+        me = await apiGet('/api/v1/auth/me');
+      } catch (err) {
+        window.location.href = 'login.html';
+        return;
+      }
+      if (me.user.role !== 'ADMIN') {
+        window.location.href = 'login.html';
+        return;
+      }
+      const admin = me.admin || {};
+      document.getElementById('adminName').textContent =
+        `${admin.first_name || ''} ${admin.last_name || ''}`.trim() || me.user.email;
+    }
+
+    document.getElementById('logoutLink').addEventListener('click', async function (e) {
+      e.preventDefault();
+      try {
+        await fetch(`${API_BASE}/api/v1/auth/logout`, { method: 'POST', credentials: 'include' });
+      } catch (err) {
+        console.error('Logout request failed:', err);
+      }
+      window.location.href = 'login.html';
+    });
+
+    init();
+  </script>
 </body>
 </html>
