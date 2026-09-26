@@ -9,7 +9,7 @@
   <nav class="navbar navbar-light bg-light border-bottom px-3">
     <span class="navbar-brand mb-0 h1">Education Management Platform</span>
     <span class="text-muted">
-      <span id="navName">Loading...</span> (Administrator) &nbsp;|&nbsp; <a href="view_admin.html?admin=me">My Profile</a> &nbsp;|&nbsp; <a href="login.html">Logout</a>
+      <span id="navName">Loading...</span> (Administrator) &nbsp;|&nbsp; <a href="view_admin.html?admin=me">My Profile</a> &nbsp;|&nbsp; <a href="#" id="logoutLink">Logout</a>
     </span>
   </nav>
 
@@ -163,6 +163,16 @@
     }
 
     init();
+
+    document.getElementById('logoutLink').addEventListener('click', async function (e) {
+      e.preventDefault();
+      try {
+        await fetch(`${API_BASE}/api/v1/auth/logout`, { method: 'POST', credentials: 'include' });
+      } catch (err) {
+        console.error('Logout request failed:', err);
+      }
+      window.location.href = 'login.html';
+    });
   </script>
 </body>
 </html>
