@@ -312,6 +312,7 @@
       }
 
       const roleKey = (me.user.role || '').toLowerCase(); // 'admin' | 'teacher' | 'student'
+      const roleLabels = { admin: 'Administrator', teacher: 'Teacher', student: 'Student' };
       const profileLink = { admin: 'view_admin.html?admin=me', teacher: 'teacher_profile.html', student: 'student_profile.html' }[roleKey];
       const dashboardLink = { admin: 'admin_dashboard.html', teacher: 'teacher_dashboard.html', student: 'student_dashboard.html' }[roleKey];
       document.getElementById('brandLink').href = dashboardLink || 'login.html';
@@ -329,7 +330,7 @@
         myName = me.user.email;
       }
 
-      document.getElementById('navUser').innerHTML = `${myName} (${roleKey.charAt(0).toUpperCase() + roleKey.slice(1)}) &nbsp;|&nbsp; <a href="${profileLink}">My Profile</a> &nbsp;|&nbsp; <a href="login.html">Logout</a>`;
+      document.getElementById('navUser').innerHTML = `${myName} (${roleLabels[roleKey] || roleKey}) &nbsp;|&nbsp; <a href="${profileLink}">My Profile</a> &nbsp;|&nbsp; <a href="login.html">Logout</a>`;
 
       messages = buildSeedData(roleKey, myName);
       nextId = Math.max(...messages.map(m => m.id)) + 1;
