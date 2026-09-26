@@ -59,7 +59,7 @@
   </div>
 
   <script>
-    const API_BASE = 'https://brightpath-backend-bagrbffzgjchfvek.malaysiawest-01.azurewebsites.net';
+    const API_BASE = 'https://brightpath-backend-bagrbffzgjchfvek.malaysiawest-01.azurewebsites.net'\;
     let student = null;
     let userEmail = '';
 
@@ -105,4 +105,110 @@
     }
 
     function setFieldsDisabled(disabled) {
-      document.getElementById('f_mobile').disa
+      document.getElementById('f_mobile').disabled = disabled;
+    }
+
+    function enterEditMode() {
+      hideAlerts();
+      setFieldsDisabled(false);
+      document.getElementById('editBtn').classList.add('d-none');
+      document.getElementById('saveBtn').classList.remove('d-none');
+      document.getElementById('cancelBtn').classList.remove('d-none');
+    }
+
+    function exitEditMode() {
+      setFieldsDisabled(true);
+      document.getElementById('editBtn').classList.remove('d-none');
+      document.getElementById('saveBtn').classList.add('d-none');
+      document.getElementById('cancelBtn').classList.add('d-none');
+    }
+
+    function cancelEdit() {
+      loadValues();
+      hideAlerts();
+      exitEditMode();
+    }
+
+    document.getElementById('profileForm').addEventListener('submit', async function (e) {
+      e.preventDefault();
+      hideAlerts();
+
+      const mobile = document.getElementById('f_mobile').value.trim();
+      if (!/^[89]\d{7}$/.test(mobile)) {
+        showFormAlert('Mobile number must be 8 digits long and start with 8 or 9.');
+        return;
+      }
+
+      const saveBtn = document.getElementById('saveBtn');
+      saveBtn.disabled = true;
+      saveBtn.textContent = 'Saving...';
+
+      try {
+        const response = await fetch(`${API_BASE}/api/v1/student/${encodeURIComponent(student.student_id_bus)}`, {
+          method: 'PATCH',
+          credentials: 'include',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ mobile }),
+        });
+
+        const body = await response.json().catch(() => ({}));
+
+        if (!response.ok) {
+          if (body.details) {
+            const messages = Object.values(body.details);
+            showFormAlert(messages.join(' | '));
+          } else {
+            showFormAlert(body.message || `Update failed (${response.status}).`);
+          }
+          return;
+        }
+
+        student.mobile = body.mobile;
+        loadValues();
+        exitEditMode();
+        const successAlert = document.getElementById('successAlert');
+        successAlert.textContent = 'Profile updated.';
+        successAlert.style.display = '';
+      } catch (err) {
+        showFormAlert('Network error — could not reach the server. Please try again.');
+        console.error('Profile update failed:', err);
+      } finally {
+        saveBtn.disabled = false;
+        saveBtn.textContent = 'Save changes';
+      }
+    });
+
+    async function init() {
+      let me;
+      try {
+        me = await apiGet('/api/v1/auth/me');
+      } catch (err) {
+        window.location.href = 'login.html';
+        return;
+      }
+      if (me.user.role !== 'STUDENT') {
+        window.location.href = 'login.html';
+        return;
+      }
+      student = me.student;
+      userEmail = me.user.email;
+      document.getElementById('studentName').textContent =
+        `${student.first_name} ${student.last_name}`.trim() || userEmail;
+
+      loadValues();
+    }
+
+    document.getElementById('logoutLink').addEventListener('click', async function (e) {
+      e.preventDefault();
+      try {
+        await fetch(`${API_BASE}/api/v1/auth/logout`, { method: 'POST', credentials: 'include' });
+      } catch (err) {
+        console.error('Logout request failed:', err);
+      }
+      window.location.href = 'login.html';
+    });
+
+    init();
+  </script>
+</body>
+</html>
