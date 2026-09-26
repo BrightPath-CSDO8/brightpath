@@ -23,7 +23,10 @@ from backend.app.services.course_service import (
 # Utils
 from backend.app.utils.auth import login_required, role_required
 
-from backend.app.exceptions.auth import NotFoundError
+from backend.app.exceptions.auth import (
+    NotFoundError,
+    ValidationError as AppValidationError,
+)
 
 course_bp = Blueprint("course", __name__, url_prefix="/api/v1")
 
@@ -116,6 +119,16 @@ def create_course():
                 }
             ),
             404,
+        )
+    except AppValidationError as e:
+        return (
+            jsonify(
+                {
+                    "error": "Validation Error.",
+                    "message": str(e),
+                }
+            ),
+            403,
         )
 
     return jsonify(course.model_dump(mode="json")), 201

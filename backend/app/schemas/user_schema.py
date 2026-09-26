@@ -1,6 +1,13 @@
 from enum import Enum
 from datetime import date
-from pydantic import BaseModel, EmailStr, ConfigDict, Field, field_validator
+from pydantic import (
+    BaseModel,
+    EmailStr,
+    ConfigDict,
+    Field,
+    field_validator,
+    model_validator,
+)
 
 
 class UserRole(str, Enum):
@@ -172,10 +179,26 @@ class TeacherRegistrationResponse(BaseModel):
 
 
 class TeacherProfileRequest(BaseModel):
-    model_config = ConfigDict(from_attributes=True)
-    salutation: str | None = None
+    model_config = ConfigDict(from_attributes=True, extra="forbid")
+    salutation: Salutation | None = None
     mobile: str | None = Field(default=None, pattern=r"^[89]\d{7}$")
-    status: str | None = None
+    status: AdminStatus | None = None
+
+    @model_validator(mode="after")
+    def validate_patch_fields(self):
+        if not self.model_fields_set:
+            raise ValueError("At least one field must be provided.")
+
+        for field_name in self.model_fields_set:
+            value = getattr(self, field_name)
+
+            if value is None:
+                raise ValueError(f"{field_name} cannot be null.")
+
+            if isinstance(value, str) and not value.strip():
+                raise ValueError(f"{field_name} cannot be empty.")
+
+        return self
 
 
 class LoginTeacherResponse(BaseModel):

@@ -126,6 +126,24 @@ def register_teacher():
     return jsonify(teacher_response.model_dump(mode="json")), 201
 
 
+# GET INDIV TEACHER PROFILE
+@teacher_bp.route("/teacher/<string:teacher_id_bus>", methods=["GET"])
+def teacher_profile(teacher_id_bus):
+    teacher = Teacher.query.filter_by(teacher_id_bus=teacher_id_bus).first()
+    if teacher is None:
+        return (
+            jsonify(
+                {
+                    "error": "Not found.",
+                    "message": "Teacher not found.",
+                }
+            ),
+            404,
+        )
+    teacher_profile = TeacherProfile.model_validate(teacher)
+    return jsonify(teacher_profile.model_dump(mode="json")), 200
+
+
 # Update Teacher Profile (AUTH teacher/admin route)
 @teacher_bp.route("/teacher/<string:teacher_id_bus>", methods=["PATCH"])
 @login_required
@@ -174,11 +192,17 @@ def update_teacher(teacher_id_bus):
         details = {}
 
         for error in e.errors():
-            field = error["loc"][0] if error["loc"] else "course"
+            field = error["loc"][0] if error["loc"] else "request"
             if error["type"] == "string_pattern_mismatch":
                 details[field] = (
                     "Mobile number must be 8 digits long and start with 8 or 9."
                 )
+            elif error["type"] == "extra_forbidden":
+                details[field] = "Unknown field."
+
+            elif error["type"] == "value_error":
+                details[field] = error["msg"].replace("Value error, ", "")
+
             else:
                 details[field] = error["msg"]
         return (

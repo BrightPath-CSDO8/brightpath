@@ -143,9 +143,11 @@ def svc_register_admin(data):
         db.session.flush()
 
         admin = Admin(
+            adm_id_bus=generate_business_id("ADM"),
             first_name=data.first_name,
             last_name=data.last_name,
             user_id=user.user_id,
+            status="ACTIVE",
         )
 
         db.session.add(admin)

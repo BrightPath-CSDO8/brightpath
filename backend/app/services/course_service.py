@@ -3,7 +3,10 @@ from backend.app.extensions import db
 from database.models import Course, Teacher, Classroom
 from backend.app.schemas.course_schema import CourseResponse
 from backend.app.utils import generate_business_id
-from backend.app.exceptions.auth import NotFoundError
+from backend.app.exceptions.auth import (
+    NotFoundError,
+    ValidationError as AppValidationError,
+)
 
 
 def svc_get_admin_courses():
@@ -83,7 +86,7 @@ def svc_create_course(data):
     # Unique ID generation loop using modern 2.0 syntax
     while True:
 
-        # Check if Teacher Id is available
+        # Check if Teacher Id is available && ACTIVE
         stmt_teacher_user = db.select(Teacher).where(
             Teacher.teacher_id_bus == data.teacher_id_bus
         )
@@ -91,6 +94,11 @@ def svc_create_course(data):
 
         if not existing_teacher:
             raise NotFoundError("Teacher is not found in system.")
+
+        if existing_teacher.status != "ACTIVE":
+            raise AppValidationError(
+                "Course can only be assigned to an active teacher."
+            )
 
         # Check if Classroom Id is available
         stmt_classroom = db.select(Classroom.classroom_id).where(

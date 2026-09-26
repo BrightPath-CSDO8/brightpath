@@ -62,7 +62,7 @@ def create_classroom():
     return (
         jsonify(
             {
-                "id": classroom.id,
+                "classroom_id": classroom.classroom_id,
                 "room_name": classroom.room_name,
                 "class_capacity": classroom.class_capacity,
             }
