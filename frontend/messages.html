@@ -330,7 +330,16 @@
         myName = me.user.email;
       }
 
-      document.getElementById('navUser').innerHTML = `${myName} (${roleLabels[roleKey] || roleKey}) &nbsp;|&nbsp; <a href="${profileLink}">My Profile</a> &nbsp;|&nbsp; <a href="login.html">Logout</a>`;
+      document.getElementById('navUser').innerHTML = `${myName} (${roleLabels[roleKey] || roleKey}) &nbsp;|&nbsp; <a href="${profileLink}">My Profile</a> &nbsp;|&nbsp; <a href="#" id="logoutLink">Logout</a>`;
+      document.getElementById('logoutLink').addEventListener('click', async function (e) {
+        e.preventDefault();
+        try {
+          await fetch(`${API_BASE}/api/v1/auth/logout`, { method: 'POST', credentials: 'include' });
+        } catch (err) {
+          console.error('Logout request failed:', err);
+        }
+        window.location.href = 'login.html';
+      });
 
       messages = buildSeedData(roleKey, myName);
       nextId = Math.max(...messages.map(m => m.id)) + 1;
