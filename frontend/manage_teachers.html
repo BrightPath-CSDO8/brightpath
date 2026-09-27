@@ -108,7 +108,7 @@
           ).join('');
 
           return `<tr>
-            <td>${esc(t.salutation)} ${esc(t.first_name)} ${esc(t.last_name)}</td>
+            <td><a href="view_teacher.html?teacher=${esc(t.teacher_id_bus)}">${esc(t.salutation)} ${esc(t.first_name)} ${esc(t.last_name)}</a></td>
             <td>${esc(t.teacher_id_bus)}</td>
             <td>${esc(t.mobile) || '—'}</td>
             <td>${classes.length ? classes.map(esc).join(', ') : '<span class="text-muted">None</span>'}</td>

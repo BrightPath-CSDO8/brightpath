@@ -23,40 +23,14 @@
   <div class="container mb-5" style="max-width: 640px;">
     <h4 class="mb-4" id="pageTitle">Teacher Details</h4>
 
-    <!-- TODO (Week 8): wire to the teacher-update endpoint; load real record by teacher ID instead of the demo lookup below -->
     <form id="teacherForm">
+      <div id="formAlert" class="alert alert-danger" style="display: none;"></div>
+      <div id="successAlert" class="alert alert-success" style="display: none;"></div>
+
       <div class="row">
         <div class="col-md-6 mb-3">
           <label class="form-label">Teacher name</label>
           <input type="text" class="form-control" id="f_name" disabled>
-        </div>
-        <div class="col-md-6 mb-3">
-          <label class="form-label">Designation</label>
-          <input type="text" class="form-control" id="f_designation" disabled>
-        </div>
-      </div>
-
-      <div class="row">
-        <div class="col-md-6 mb-3">
-          <label class="form-label">Employment type</label>
-          <select class="form-select" id="f_employment" disabled>
-            <option>Full Time</option>
-            <option>Part Time</option>
-          </select>
-        </div>
-        <div class="col-md-6 mb-3">
-          <label class="form-label">Status</label>
-          <select class="form-select" id="f_status" disabled>
-            <option>Active</option>
-            <option>Inactive</option>
-          </select>
-        </div>
-      </div>
-
-      <div class="row">
-        <div class="col-md-6 mb-3">
-          <label class="form-label">Contact number</label>
-          <input type="tel" class="form-control" id="f_contact" disabled>
         </div>
         <div class="col-md-6 mb-3">
           <label class="form-label">ID number</label>
@@ -64,42 +38,18 @@
         </div>
       </div>
 
-      <div class="mb-3">
-        <label class="form-label">Address</label>
-        <textarea class="form-control" rows="2" id="f_address" disabled></textarea>
-      </div>
-
       <div class="row">
         <div class="col-md-6 mb-3">
-          <label class="form-label">Date of birth</label>
-          <input type="date" class="form-control" id="f_dob" disabled>
+          <label class="form-label">Mobile number</label>
+          <input type="tel" class="form-control" id="f_mobile" disabled>
         </div>
         <div class="col-md-6 mb-3">
-          <label class="form-label">Email address</label>
-          <input type="email" class="form-control" id="f_email" disabled>
+          <label class="form-label">Status</label>
+          <select class="form-select" id="f_status" disabled>
+            <option value="ACTIVE">ACTIVE</option>
+            <option value="INACTIVE">INACTIVE</option>
+          </select>
         </div>
-      </div>
-
-      <div class="mb-3">
-        <label class="form-label">Remarks / Others</label>
-        <textarea class="form-control" rows="2" id="f_remarks" disabled></textarea>
-      </div>
-
-      <div class="mb-3">
-        <label class="form-label">Teacher photo</label>
-        <div class="d-flex align-items-center gap-3">
-          <svg id="photoPreview" width="64" height="64" viewBox="0 0 72 72" style="border-radius: 50%; background: #dee2e6; flex-shrink: 0;">
-            <circle cx="36" cy="27" r="14" fill="#adb5bd"/>
-            <path d="M10 65 Q36 42 62 65 Z" fill="#adb5bd"/>
-          </svg>
-          <input type="file" class="form-control" id="f_photo" accept="image/*" onchange="previewPhoto(event)" disabled>
-        </div>
-        <!-- TODO (Week 8): upload to Azure Blob Storage; this is a live client-side preview only -->
-      </div>
-
-      <div class="mb-4">
-        <label class="form-label">Teacher introduction</label>
-        <textarea class="form-control" rows="3" id="f_bio" disabled></textarea>
       </div>
 
       <div class="mb-3 p-3 border rounded bg-light">
@@ -107,7 +57,6 @@
         <a href="documents.html" id="docLink">View / upload documents</a>
       </div>
 
-      <!-- TODO (Week 8): wire to account credential endpoints -->
       <div class="mb-4 p-3 border rounded bg-light">
         <div class="fw-medium mb-1">Platform login credentials</div>
         <a href="manage_credentials.html" id="credLink">View, create, reset platform login credentials for user</a>
@@ -122,54 +71,35 @@
   </div>
 
   <script>
-    // Demo-only lookup standing in for a real API call by teacher ID (Week 8)
-    const teachers = {
-      lim: { name: 'Mr. Lim', designation: 'Senior Teacher', employment: 'Full Time', status: 'Active',
-             contact: '+65 9123 4567', id: 'S1234567A', address: '12 Bishan Street 21, Singapore',
-             dob: '1985-04-12', email: 'lim@example.com', remarks: '',
-             bio: 'Mr. Lim has over 10 years of experience teaching mathematics, from foundational arithmetic through pre-calculus. He is known for breaking complex problems into simple, step-by-step approaches that build lasting confidence in his students.' },
-      ong: { name: 'Ms. Ong', designation: 'Teacher', employment: 'Full Time', status: 'Active',
-             contact: '+65 9234 5678', id: 'S1987654B', address: '8 Tampines Ave 5, Singapore',
-             dob: '1990-09-03', email: 'ong@example.com', remarks: '', bio: '' },
-      rahman: { name: 'Mr. Rahman', designation: 'Teacher', employment: 'Part Time', status: 'Active',
-             contact: '+65 9345 6789', id: 'S1990123C', address: '5 Jurong West St 42, Singapore',
-             dob: '1992-01-20', email: 'rahman@example.com', remarks: 'Part-time, available Mon/Wed/Fri only',
-             bio: 'Mr. Rahman specialises in secondary-level science education with a hands-on, experiment-driven approach. He is passionate about making science feel relevant and exciting through real-world examples.' }
-    };
+    function esc(value) {
+      return String(value ?? '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+    }
+
+    async function apiGet(path) {
+      const response = await fetch(`${API_BASE}${path}`, { credentials: 'include' });
+      if (!response.ok) throw new Error(`${path} returned ${response.status}`);
+      return response.json();
+    }
 
     const params = new URLSearchParams(window.location.search);
-    const key = params.get('name');
-    const t = teachers[key] || teachers.lim; // fallback so the page still renders if opened directly
+    const teacherId = params.get('teacher');
 
-    const fieldIds = ['f_name', 'f_designation', 'f_employment', 'f_status', 'f_contact',
-                       'f_id', 'f_address', 'f_dob', 'f_email', 'f_remarks', 'f_photo', 'f_bio'];
+    let teacher = null;
+    const fieldIds = ['f_mobile', 'f_status'];
 
     function loadValues() {
-      document.getElementById('pageTitle').textContent = `Teacher Details — ${t.name}`;
-      document.getElementById('f_name').value = t.name;
-      document.getElementById('f_designation').value = t.designation;
-      document.getElementById('f_employment').value = t.employment;
-      document.getElementById('f_status').value = t.status;
-      document.getElementById('f_contact').value = t.contact;
-      document.getElementById('f_id').value = t.id;
-      document.getElementById('f_address').value = t.address;
-      document.getElementById('f_dob').value = t.dob;
-      document.getElementById('f_email').value = t.email;
-      document.getElementById('f_remarks').value = t.remarks;
-      document.getElementById('f_bio').value = t.bio;
+      const fullName = `${teacher.salutation || ''} ${teacher.first_name} ${teacher.last_name}`.trim();
+      document.getElementById('pageTitle').textContent = `Teacher Details — ${fullName}`;
+      document.getElementById('f_name').value = fullName;
+      document.getElementById('f_id').value = teacher.teacher_id_bus;
+      document.getElementById('f_mobile').value = teacher.mobile || '';
+      document.getElementById('f_status').value = teacher.status;
     }
-
-    function previewPhoto(event) {
-      const file = event.target.files[0];
-      if (!file) return;
-      const url = URL.createObjectURL(file);
-      const preview = document.getElementById('photoPreview');
-      preview.outerHTML = `<img id="photoPreview" src="${url}" width="64" height="64" style="border-radius: 50%; object-fit: cover; flex-shrink: 0;">`;
-    }
-
-    loadValues();
-    document.getElementById('credLink').href = 'manage_credentials.html?name=' + encodeURIComponent(t.name);
-    document.getElementById('docLink').href = 'documents.html?type=teacher&name=' + encodeURIComponent(t.name);
 
     function setFieldsDisabled(disabled) {
       fieldIds.forEach(id => document.getElementById(id).disabled = disabled);
@@ -190,15 +120,85 @@
     }
 
     function cancelEdit() {
-      loadValues(); // discard any unsaved edits, revert to original values
+      loadValues();
       exitEditMode();
     }
 
-    document.getElementById('teacherForm').addEventListener('submit', function (e) {
+    function showFormAlert(message) {
+      const alertEl = document.getElementById('formAlert');
+      alertEl.textContent = message;
+      alertEl.style.display = '';
+    }
+
+    function hideAlerts() {
+      document.getElementById('formAlert').style.display = 'none';
+      document.getElementById('successAlert').style.display = 'none';
+    }
+
+    document.getElementById('teacherForm').addEventListener('submit', async function (e) {
       e.preventDefault();
-      // TODO (Week 8): send updated field values to the teacher-update endpoint
-      exitEditMode();
+      hideAlerts();
+      const saveBtn = document.getElementById('saveBtn');
+      saveBtn.disabled = true;
+      saveBtn.textContent = 'Saving...';
+
+      const newMobile = document.getElementById('f_mobile').value;
+      const newStatus = document.getElementById('f_status').value;
+
+      try {
+        // Backend requires salutation + mobile + status together on every PATCH.
+        const response = await fetch(`${API_BASE}/api/v1/teacher/${encodeURIComponent(teacherId)}`, {
+          method: 'PATCH',
+          credentials: 'include',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ salutation: teacher.salutation, mobile: newMobile, status: newStatus }),
+        });
+
+        const body = await response.json().catch(() => ({}));
+
+        if (!response.ok) {
+          if (body.details) {
+            showFormAlert(Object.values(body.details).join(' | '));
+          } else {
+            showFormAlert(body.message || `Update failed (${response.status}).`);
+          }
+          return;
+        }
+
+        teacher.mobile = newMobile;
+        teacher.status = newStatus;
+        const successAlert = document.getElementById('successAlert');
+        successAlert.textContent = 'Teacher details updated.';
+        successAlert.style.display = '';
+        exitEditMode();
+      } catch (err) {
+        showFormAlert('Network error — could not reach the server. Please try again.');
+        console.error('Teacher update failed:', err);
+      } finally {
+        saveBtn.disabled = false;
+        saveBtn.textContent = 'Save changes';
+      }
     });
+
+    async function init() {
+      if (!teacherId) {
+        showFormAlert('No teacher specified.');
+        return;
+      }
+      try {
+        teacher = await apiGet(`/api/v1/teacher/${encodeURIComponent(teacherId)}`);
+      } catch (err) {
+        showFormAlert('Could not load teacher record.');
+        console.error('Failed to load teacher:', err);
+        return;
+      }
+      loadValues();
+      const fullName = `${teacher.first_name} ${teacher.last_name}`;
+      document.getElementById('credLink').href = 'manage_credentials.html?name=' + encodeURIComponent(fullName);
+      document.getElementById('docLink').href = 'documents.html?type=teacher&name=' + encodeURIComponent(fullName);
+    }
+
+    init();
   </script>
 </body>
 </html>
