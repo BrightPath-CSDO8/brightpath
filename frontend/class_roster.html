@@ -39,12 +39,13 @@
       <div class="card-header">Roster</div>
       <div class="table-responsive"><table class="table mb-0" style="table-layout: fixed; width: 100%;">
         <thead><tr>
-          <th style="width: 40%;">Student</th>
-          <th style="width: 30%;">Mobile</th>
-          <th style="width: 30%;">Enrolment ID</th>
+          <th style="width: 30%;">Student</th>
+          <th style="width: 25%;">Enrolment ID</th>
+          <th style="width: 20%;">Mobile</th>
+          <th style="width: 25%;" id="emailHeader" class="d-none">Email</th>
         </tr></thead>
         <tbody id="rosterBody">
-          <tr><td colspan="3" class="text-muted">Loading...</td></tr>
+          <tr><td colspan="4" class="text-muted">Loading...</td></tr>
         </tbody>
       </table></div>
     </div>
@@ -78,7 +79,7 @@
 
       if (!courseId) {
         courseNameEl.textContent = 'No course specified.';
-        rosterBody.innerHTML = '<tr><td colspan="3" class="text-danger">Missing course parameter — go back to the dashboard and click a class.</td></tr>';
+        rosterBody.innerHTML = '<tr><td colspan="4" class="text-danger">Missing course parameter — go back to the dashboard and click a class.</td></tr>';
         return;
       }
 
@@ -106,7 +107,7 @@
         const course = courses.find(c => c.course_id_bus === courseId);
         if (!course) {
           courseNameEl.textContent = 'Course not found or not assigned to you.';
-          rosterBody.innerHTML = '<tr><td colspan="3" class="text-danger">You are not assigned to this course.</td></tr>';
+          rosterBody.innerHTML = '<tr><td colspan="4" class="text-danger">You are not assigned to this course.</td></tr>';
           return;
         }
 
@@ -118,18 +119,30 @@
         document.getElementById('actionButtons').style.display = '';
 
         if (roster.length === 0) {
-          rosterBody.innerHTML = '<tr><td colspan="3" class="text-muted">No confirmed students enrolled yet.</td></tr>';
+          rosterBody.innerHTML = '<tr><td colspan="4" class="text-muted">No confirmed students enrolled yet.</td></tr>';
           return;
         }
 
+        // The Email column shows once the backend provides student emails.
+        const hasEmail = roster.some(s => s.email);
+        document.getElementById('emailHeader').classList.toggle('d-none', !hasEmail);
+
+        const teacherLabel = document.getElementById('teacherName').textContent;
+        const emailLink = s => {
+          const subject = course.course_name;
+          const body = `Hi ${s.first_name},\n\n\n\nRegards,\n${teacherLabel}`;
+          return `mailto:${s.email}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+        };
+
         rosterBody.innerHTML = roster.map(s => `<tr>
           <td>${esc(s.first_name)} ${esc(s.last_name)}</td>
-          <td>${esc(s.mobile)}</td>
           <td>${esc(s.enrolment_id_bus)}</td>
+          <td>${esc(s.mobile)}</td>
+          ${hasEmail ? `<td>${s.email ? `<a href="${esc(emailLink(s))}">Send email</a>` : '<span class="text-muted">—</span>'}</td>` : ''}
         </tr>`).join('');
       } catch (err) {
         courseNameEl.textContent = 'Could not load this class.';
-        rosterBody.innerHTML = '<tr><td colspan="3" class="text-danger">Could not load roster. Please refresh.</td></tr>';
+        rosterBody.innerHTML = '<tr><td colspan="4" class="text-danger">Could not load roster. Please refresh.</td></tr>';
         console.error('Failed to load roster:', err);
       }
     }
