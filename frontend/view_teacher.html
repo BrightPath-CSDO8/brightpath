@@ -136,12 +136,12 @@
       const newStatus = document.getElementById('f_status').value;
 
       try {
-        // Backend requires salutation + mobile + status together on every PATCH.
+        // The endpoint accepts partial updates; send only the two editable fields.
         const response = await fetch(`${API_BASE}/api/v1/teacher/${encodeURIComponent(teacherId)}`, {
           method: 'PATCH',
           credentials: 'include',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ salutation: teacher.salutation, mobile: newMobile, status: newStatus }),
+          body: JSON.stringify({ mobile: newMobile, status: newStatus }),
         });
 
         const body = await response.json().catch(() => ({}));

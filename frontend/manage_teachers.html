@@ -139,13 +139,12 @@
       button.textContent = 'Saving...';
 
       try {
-        // Backend requires salutation + mobile + status together on every PATCH —
-        // salutation and mobile are resent unchanged since only status is editable here.
+        // The endpoint accepts partial updates, so only the status is sent.
         const response = await fetch(`${API_BASE}/api/v1/teacher/${encodeURIComponent(teacherId)}`, {
           method: 'PATCH',
           credentials: 'include',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ salutation: teacher.salutation, mobile: teacher.mobile, status: newStatus }),
+          body: JSON.stringify({ status: newStatus }),
         });
 
         const body = await response.json().catch(() => ({}));
