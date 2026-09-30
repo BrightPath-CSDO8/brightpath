@@ -1,111 +1,121 @@
-from flask import Blueprint, request, jsonify
-from sqlalchemy.exc import IntegrityError
+from flask import Blueprint, request, jsonify, session
 
-from app.models.users import User
-from app.extensions import db
+from sqlalchemy.exc import IntegrityError
+from backend.app.extensions import db
 from pydantic import ValidationError
+from database.models import Users
 
 # Schemas
-from app.schemas.user_schema import StudentCreate, StudentResponse, StaffCreate
-from app.schemas.auth_schema import LoginRequest
+from backend.app.schemas.user_schema import (
+    LoginStudentResponse,
+    LoginTeacherResponse,
+    LoginAdminResponse,
+)
+from backend.app.schemas.auth_schema import LoginRequest
+from backend.app.schemas.user_schema import User
 
 # Service
-from app.services.user_service import svc_register_student, svc_register_staff
-from app.services.auth_service import svc_login
+from backend.app.services.auth_service import svc_login, svc_me
 
 # Exceptions
-from app.exceptions.auth import EmailAlreadyRegisteredError, AuthenticationError
+from backend.app.exceptions.auth import AuthenticationError
 
-auth_bp = Blueprint("auth", __name__)
+# Utils
+from backend.app.utils.auth import login_required, role_required
+
+auth_bp = Blueprint("auth", __name__, url_prefix="/api/v1")
 
 
-# Register student
-@auth_bp.route("/api/v1/auth/register", methods=["POST"])
-def register_student():
-    response = request.get_json(silent=True)
+@auth_bp.route("/test-student", methods=["GET"])
+@login_required
+@role_required("STUDENT")
+def test_student():
+    return jsonify({"message": "Student access granted"}), 200
 
-    if not response:
-        return (
-            jsonify({"error": "Bad request.", "message": "Request body is required"}),
-            400,
-        )
 
-    try:
-        student_data = StudentCreate.model_validate(response)
+@auth_bp.route("/users", methods=["GET"])
+@login_required
+@role_required("ADMIN")
+def all_users():
+    all_users = Users.query.all()
+    response = [User.model_validate(user) for user in all_users]
 
-    except ValidationError as e:
-        print("============================")
-        print("ERROR:", e)
-        print("ERRORS: ", e.errors())
-        print("JSON: ", e.json())
-        print("============================")
+    return jsonify([user.model_dump(mode="json") for user in response]), 200
 
-        details = {}
 
-        for error in e.errors():
-            field = error["loc"][0] if error["loc"] else "request"
-            details[field] = error["msg"]
+# use this endpoint if users refreshes the page
+@auth_bp.route("/auth/me", methods=["GET"])
+def auth_me():
+    user_id = session.get("user_id")
 
+    if not user_id:
         return (
             jsonify(
                 {
-                    "error": "Bad request.",
-                    "message": "Invalid request body.",
-                    "details": details,
+                    "error": "Unauthorized.",
+                    "message": "User is not authenticated.",
                 }
             ),
-            400,
+            401,
         )
-    # 2. Perform registration operation
+
     try:
-        student = svc_register_student(student_data)
-    except EmailAlreadyRegisteredError as e:
+        user, user_profile = svc_me(user_id)
+
+    except AuthenticationError as e:
+        session.clear()
+
         return (
             jsonify(
                 {
-                    "error": "Conflict.",
+                    "error": "Unauthorized.",
                     "message": str(e),
                 }
             ),
-            409,
+            401,
         )
-    except IntegrityError:
+
+    if user.role == "STUDENT":
+        response = LoginStudentResponse(
+            user=user,
+            student=user_profile,
+        )
+
+    elif user.role == "TEACHER":
+        response = LoginTeacherResponse(
+            user=user,
+            teacher=user_profile,
+        )
+
+    elif user.role == "ADMIN":
+        response = LoginAdminResponse(
+            user=user,
+            admin=user_profile,
+        )
+
+    # elif user.role == "SUPERADMIN":
+    #     response = LoginSuperAdminResponse(
+    #         user=user,
+    #         superadmin=user_profile,
+    #     )
+
+    else:
+        session.clear()
+
         return (
             jsonify(
                 {
-                    "error": "Conflict.",
-                    "message": "Registration conflicts with existing data.",
+                    "error": "Unauthorized.",
+                    "message": "Invalid user role.",
                 }
             ),
-            409,
-        )
-    except Exception as e:
-        print("Registration failed:", e)
-
-        return (
-            jsonify(
-                {
-                    "error": "Internal server error.",
-                    "message": "Student registration failed.",
-                }
-            ),
-            500,
+            401,
         )
 
-    student_response = StudentResponse(
-        student_id_bus=student.student_id_bus,
-        first_name=student.first_name,
-        last_name=student.last_name,
-        mobile=student.mobile,
-        dob=student.dob,
-        role=student.user.role,
-    )
-
-    return jsonify(student_response.model_dump(mode="json")), 201
+    return jsonify(response.model_dump(mode="json")), 200
 
 
-# Login student
-@auth_bp.route("/api/v1/login", methods=["POST"])
+@auth_bp.route("/auth/login", methods=["POST"])
 def login():
     response = request.get_json(silent=True)
 
@@ -136,7 +146,8 @@ def login():
         )
 
     try:
-        svc_login(login_user)
+        user, user_profile = svc_login(login_user)
+
     except AuthenticationError as e:
         return (
             jsonify(
@@ -147,30 +158,22 @@ def login():
             ),
             401,
         )
-    return jsonify({"message": "Login successful"}), 200
+
+    session["user_id"] = user.user_id
+    session["role"] = user.role
+
+    if user.role == "STUDENT":
+        login_response = LoginStudentResponse(user=user, student=user_profile)
+    if user.role == "TEACHER":
+        login_response = LoginTeacherResponse(user=user, teacher=user_profile)
+    if user.role == "ADMIN":
+        login_response = LoginAdminResponse(user=user, admin=user_profile)
+
+    return jsonify(login_response.model_dump(mode="json")), 200
 
 
-# Register for SuperAdmins, Admins, Teachers
-# SuperAd -> SuperAd, Admin, Teacher
-# Admin -> Teacher
-# Hence, to include Bearer Token
-@auth_bp.route("/api/v1/auth/staff", methods=["POST"])
-def register_staff():
-    response = request.get_json(silent=True)
+@auth_bp.route("/auth/logout", methods=["POST"])
+def logout():
+    session.clear()
 
-    if not response:
-        return (
-            jsonify({"error": "Bad request.", "message": "Request body is required"}),
-            400,
-        )
-
-    try:
-        user_data = StaffCreate.model_validate(response)
-
-    except ValidationError as e:
-        pass
-
-    staff = svc_register_staff(user_data)
-    # print(f"User: {staff}")
-
-    return (jsonify({"message": "auth user created"}), 201)
+    return jsonify({"message": "Logout successfully"}), 200

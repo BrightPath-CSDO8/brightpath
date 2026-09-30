@@ -1,12 +1,16 @@
 from flask import Blueprint, request, jsonify
-from app.models.classroom import Classroom
 from pydantic import ValidationError
 
+from database.models import Classroom
+
 # Schema
-from app.schemas.classroom_schema import ClassroomCreate, AllClassrooms
+from backend.app.schemas.classroom_schema import ClassroomCreate, AllClassrooms
 
 # Service
-from app.services.classroom_service import svc_create_classroom
+from backend.app.services.classroom_service import svc_create_classroom
+
+# Utils
+from backend.app.utils.auth import login_required, role_required
 
 classroom_bp = Blueprint("classroom", __name__)
 
@@ -17,10 +21,12 @@ def get_all_classrooms():
 
     response = [AllClassrooms.model_validate(classrooms) for classrooms in classrooms]
 
-    return jsonify([c.model_dump(mode="json") for c in response]), 200
+    return jsonify([classroom.model_dump(mode="json") for classroom in response]), 200
 
 
 @classroom_bp.route("/api/v1/classroom", methods=["POST"])
+@login_required
+@role_required("ADMIN")
 def create_classroom():
     response = request.get_json(silent=True)
 
@@ -56,7 +62,7 @@ def create_classroom():
     return (
         jsonify(
             {
-                "id": classroom.id,
+                "classroom_id": classroom.classroom_id,
                 "room_name": classroom.room_name,
                 "class_capacity": classroom.class_capacity,
             }

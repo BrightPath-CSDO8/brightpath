@@ -7,6 +7,7 @@ BrightPath is a multi-tier web application designed to support common education 
 The project demonstrates the integration of **application development, containerisation, cloud deployment, CI/CD, security, monitoring, and performance testing** using Microsoft Azure and modern DevOps practices.
 
 ---
+
 # Project Scope
 
 BrightPath was developed as an educational capstone project.
@@ -138,24 +139,24 @@ BrightPath provides role-based functionality for different users within an educa
 
 # Technology Stack
 
-| Area | Technology |
-|---|---|
-| Frontend | HTML / Web Frontend |
-| Backend | Python, Flask |
-| API | REST |
-| Validation | Pydantic |
-| ORM | SQLAlchemy / Flask-SQLAlchemy |
-| Database | Microsoft Azure SQL |
-| Database Driver | pyODBC / ODBC Driver 18 |
-| Authentication | Flask Session Authentication |
-| Application Server | Gunicorn |
-| Containerisation | Docker |
-| Container Registry | Azure Container Registry |
-| Cloud Hosting | Azure App Service |
-| CI/CD | GitHub Actions |
-| Monitoring | Azure Application Insights / Azure Monitor |
-| Performance Testing | Azure Load Testing |
-| Version Control | Git / GitHub |
+| Area                | Technology                                 |
+| ------------------- | ------------------------------------------ |
+| Frontend            | HTML / Web Frontend                        |
+| Backend             | Python, Flask                              |
+| API                 | REST                                       |
+| Validation          | Pydantic                                   |
+| ORM                 | SQLAlchemy / Flask-SQLAlchemy              |
+| Database            | Microsoft Azure SQL                        |
+| Database Driver     | pyODBC / ODBC Driver 18                    |
+| Authentication      | Flask Session Authentication               |
+| Application Server  | Gunicorn                                   |
+| Containerisation    | Docker                                     |
+| Container Registry  | Azure Container Registry                   |
+| Cloud Hosting       | Azure App Service                          |
+| CI/CD               | GitHub Actions                             |
+| Monitoring          | Azure Application Insights / Azure Monitor |
+| Performance Testing | Azure Load Testing                         |
+| Version Control     | Git / GitHub                               |
 
 ---
 
@@ -381,7 +382,7 @@ Azure App Service
 
 Container images can be tagged using the Git commit SHA, providing traceability between deployed containers and source code revisions.
 
-```
+````
 
 This provides a clear link between:
 
@@ -393,7 +394,7 @@ Container Image
      │
      ▼
 Deployment
-```
+````
 
 ---
 
@@ -540,6 +541,7 @@ Run the backend:
 ```bash
 python -m backend.run
 ```
+
 ---
 
 # Deployment Workflow
@@ -579,23 +581,23 @@ This provides a repeatable deployment process instead of manually copying applic
 
 The BrightPath project demonstrates practical implementation of several Cloud and DevOps concepts.
 
-| Area | Implementation |
-|---|---|
-| Cloud Hosting | Azure App Service |
-| Managed Database | Azure SQL Database |
-| Containerisation | Docker |
-| Container Registry | Azure Container Registry |
-| CI/CD | GitHub Actions |
-| Infrastructure Security | HTTPS, network/database restrictions |
-| Application Security | Authentication and RBAC |
-| Configuration Management | Environment variables |
-| Monitoring | Azure Monitor / Application Insights |
-| Performance Testing | Azure Load Testing |
-| Application Server | Gunicorn |
-| API Architecture | Flask REST API |
-| Validation | Pydantic |
-| ORM | SQLAlchemy |
-| Version Control | Git / GitHub |
+| Area                     | Implementation                       |
+| ------------------------ | ------------------------------------ |
+| Cloud Hosting            | Azure App Service                    |
+| Managed Database         | Azure SQL Database                   |
+| Containerisation         | Docker                               |
+| Container Registry       | Azure Container Registry             |
+| CI/CD                    | GitHub Actions                       |
+| Infrastructure Security  | HTTPS, network/database restrictions |
+| Application Security     | Authentication and RBAC              |
+| Configuration Management | Environment variables                |
+| Monitoring               | Azure Monitor / Application Insights |
+| Performance Testing      | Azure Load Testing                   |
+| Application Server       | Gunicorn                             |
+| API Architecture         | Flask REST API                       |
+| Validation               | Pydantic                             |
+| ORM                      | SQLAlchemy                           |
+| Version Control          | Git / GitHub                         |
 
 ---
 
