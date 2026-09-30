@@ -24,8 +24,11 @@
   <div class="container my-4">
 
     <div class="card mb-4">
-      <div class="card-header">My courses &amp; schedule</div>
-      <div class="table-responsive"><table class="table mb-0" style="table-layout: fixed; width: 100%;">
+      <div class="card-header d-flex justify-content-between align-items-center" role="button" tabindex="0" style="cursor: pointer;" data-section="sec-courses" aria-controls="sec-courses" aria-expanded="true">
+        <span>My courses &amp; schedule <span class="text-muted small ms-1" id="count-courses"></span></span>
+        <span class="section-chevron text-muted" aria-hidden="true">&#9662;</span>
+      </div>
+      <div class="table-responsive" id="sec-courses"><table class="table mb-0" style="table-layout: fixed; width: 100%;">
         <thead><tr>
           <th style="width: 22%;">Course</th>
           <th style="width: 18%;">Teacher</th>
@@ -40,8 +43,11 @@
     </div>
 
     <div class="card mb-4">
-      <div class="card-header">Grades and feedback</div>
-      <div class="table-responsive"><table class="table mb-0" style="table-layout: fixed; width: 100%;">
+      <div class="card-header d-flex justify-content-between align-items-center" role="button" tabindex="0" style="cursor: pointer;" data-section="sec-grades" aria-controls="sec-grades" aria-expanded="false">
+        <span>Grades and feedback <span class="text-muted small ms-1" id="count-grades"></span></span>
+        <span class="section-chevron text-muted" aria-hidden="true">&#9656;</span>
+      </div>
+      <div class="table-responsive d-none" id="sec-grades"><table class="table mb-0" style="table-layout: fixed; width: 100%;">
         <thead><tr>
           <th style="width: 22%;">Course</th>
           <th style="width: 20%;">Assessment</th>
@@ -56,8 +62,11 @@
     </div>
 
     <div class="card mb-4">
-      <div class="card-header">My attendance</div>
-      <div class="table-responsive"><table class="table mb-0" style="table-layout: fixed; width: 100%;">
+      <div class="card-header d-flex justify-content-between align-items-center" role="button" tabindex="0" style="cursor: pointer;" data-section="sec-attendance" aria-controls="sec-attendance" aria-expanded="false">
+        <span>My attendance <span class="text-muted small ms-1" id="count-attendance"></span></span>
+        <span class="section-chevron text-muted" aria-hidden="true">&#9656;</span>
+      </div>
+      <div class="table-responsive d-none" id="sec-attendance"><table class="table mb-0" style="table-layout: fixed; width: 100%;">
         <thead><tr>
           <th style="width: 25%;">Date</th>
           <th style="width: 25%;">Course</th>
@@ -180,6 +189,7 @@
           apiGet('/api/v1/classrooms'),
         ]);
 
+        setCount('courses', enrolments.length);
         if (enrolments.length === 0) {
           coursesBody.innerHTML = '<tr><td colspan="5" class="text-muted">Not enrolled in any courses yet.</td></tr>';
           return;
@@ -218,11 +228,31 @@
       }
     }
 
+    // ---- Collapsible sections ----
+    function setCount(key, n) {
+      document.getElementById(`count-${key}`).textContent = `(${n})`;
+    }
+
+    function toggleSection(header) {
+      const body = document.getElementById(header.getAttribute('data-section'));
+      const open = body.classList.toggle('d-none') === false;
+      header.setAttribute('aria-expanded', open ? 'true' : 'false');
+      header.querySelector('.section-chevron').innerHTML = open ? '&#9662;' : '&#9656;';
+    }
+
+    document.querySelectorAll('[data-section]').forEach(header => {
+      header.addEventListener('click', () => toggleSection(header));
+      header.addEventListener('keydown', e => {
+        if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); toggleSection(header); }
+      });
+    });
+
     async function loadGrades() {
       const gradesBody = document.getElementById('gradesBody');
       try {
         const data = await apiGet('/api/v1/student/grades');
         const grades = data.grades || [];
+        setCount('grades', grades.length);
 
         if (grades.length === 0) {
           gradesBody.innerHTML = '<tr><td colspan="5" class="text-muted">No grades recorded yet.</td></tr>';
@@ -246,6 +276,7 @@
       const attendanceBody = document.getElementById('attendanceBody');
       try {
         const records = await apiGet('/api/v1/student/attendance');
+        setCount('attendance', records.length);
 
         if (records.length === 0) {
           attendanceBody.innerHTML = '<tr><td colspan="4" class="text-muted">No attendance recorded yet.</td></tr>';
