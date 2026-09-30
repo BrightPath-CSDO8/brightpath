@@ -111,7 +111,7 @@
           <td>${statusBadge(e.status)}</td>
           <td>
             ${e.status === 'PENDING'
-              ? `<button class="btn btn-sm btn-primary" data-enrolment="${esc(e.enrolment_id_bus)}" data-course="${esc(e.course_name)}" onclick="confirmEnrolment(this)">Confirm</button>`
+              ? `<button class="btn btn-sm btn-primary" data-enrolment="${esc(e.enrolment_id_bus)}" data-course="${esc(e.course_name)}" data-student="${esc(e.first_name)} ${esc(e.last_name)}" onclick="confirmEnrolment(this)">Confirm</button>`
               : '<span class="text-muted small">—</span>'}
           </td>
         </tr>`).join('');
@@ -125,6 +125,11 @@
       hideAlerts();
       const enrolmentId = button.getAttribute('data-enrolment');
       const courseName = button.getAttribute('data-course');
+      const studentName = button.getAttribute('data-student');
+
+      if (!confirm(`Confirm ${studentName}'s enrolment in ${courseName}?\n\nPlease check that payment has been received first.`)) {
+        return;
+      }
 
       button.disabled = true;
       button.textContent = 'Confirming...';
@@ -147,7 +152,7 @@
         }
 
         const successAlert = document.getElementById('successAlert');
-        successAlert.textContent = `Enrolment for ${courseName} confirmed.`;
+        successAlert.textContent = `${studentName}'s enrolment in ${courseName} confirmed.`;
         successAlert.style.display = '';
 
         await loadEnrolments();
