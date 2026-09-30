@@ -52,16 +52,6 @@
         </div>
       </div>
 
-      <div class="mb-3 p-3 border rounded bg-light">
-        <div class="fw-medium mb-1">Documents</div>
-        <a href="documents.html" id="docLink">View / upload documents</a>
-      </div>
-
-      <div class="mb-4 p-3 border rounded bg-light">
-        <div class="fw-medium mb-1">Platform login credentials</div>
-        <a href="manage_credentials.html" id="credLink">View, create, reset platform login credentials for user</a>
-      </div>
-
       <div class="d-flex gap-2">
         <button type="button" class="btn btn-primary flex-fill" id="editBtn" onclick="enterEditMode()">Edit</button>
         <button type="submit" class="btn btn-primary flex-fill d-none" id="saveBtn">Save changes</button>
@@ -193,9 +183,6 @@
         return;
       }
       loadValues();
-      const fullName = `${teacher.first_name} ${teacher.last_name}`;
-      document.getElementById('credLink').href = 'manage_credentials.html?name=' + encodeURIComponent(fullName);
-      document.getElementById('docLink').href = 'documents.html?type=teacher&name=' + encodeURIComponent(fullName);
     }
 
     init();
