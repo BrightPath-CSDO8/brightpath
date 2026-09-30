@@ -11,7 +11,6 @@ from pydantic import (
 
 
 class UserRole(str, Enum):
-    SUPERADMIN = "SUPERADMIN"
     ADMIN = "ADMIN"
     STUDENT = "STUDENT"
     TEACHER = "TEACHER"
@@ -260,7 +259,3 @@ class AdminCreateResponse(BaseModel):
 class LoginAdminResponse(BaseModel):
     user: UserResponse
     admin: AdminProfile
-
-
-###### SUPERADMIN
-#

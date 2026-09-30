@@ -2,10 +2,16 @@ from backend.app.extensions import db
 from database.models import Users, Student, Teacher, Admin
 
 # Utils
-from backend.app.utils.password import verify_hash_password
+from backend.app.utils.password import hash_password, verify_hash_password
+
+from database.models import Users
 
 # Exceptions
-from backend.app.exceptions.auth import AuthenticationError, ForbiddenError
+from backend.app.exceptions.auth import (
+    AuthenticationError,
+    ForbiddenError,
+    ValidationError as AppValidationError,
+)
 
 
 def get_user_profile(user):
@@ -62,3 +68,29 @@ def svc_me(user_id):
     user_profile = get_user_profile(user)
 
     return user, user_profile
+
+
+def svc_change_password(user_id, data):
+    user = db.session.scalar(db.select(Users).where(Users.user_id == user_id))
+
+    if not user:
+        raise AuthenticationError("User account not found.")
+
+    if not verify_hash_password(
+        data.current_password,
+        user.password_hash,
+    ):
+        raise AppValidationError("Incorrect account password.")
+
+    if data.new_password != data.confirm_password:
+        raise AppValidationError("New password and confirm password do not match.")
+
+    if verify_hash_password(
+        data.new_password,
+        user.password_hash,
+    ):
+        raise AppValidationError("Old password cannot be reused.")
+
+    user.password_hash = hash_password(data.new_password)
+
+    db.session.commit()
