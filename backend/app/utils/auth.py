@@ -2,9 +2,29 @@ from functools import wraps
 
 from flask import jsonify, session, g
 from backend.app.extensions import db
-from database.models import Users
+from database.models import Users, Student, Teacher, Admin
 
 from backend.app.exceptions.auth import ForbiddenError
+
+
+def get_user_profile(current_user):
+
+    if current_user.role == "STUDENT":
+        return db.session.scalar(
+            db.select(Student).where(Student.user_id == current_user.user_id)
+        )
+
+    if current_user.role == "TEACHER":
+        return db.session.scalar(
+            db.select(Teacher).where(Teacher.user_id == current_user.user_id)
+        )
+
+    if current_user.role == "ADMIN":
+        return db.session.scalar(
+            db.select(Admin).where(Admin.user_id == current_user.user_id)
+        )
+
+    return None
 
 
 def login_required(view):
@@ -37,7 +57,22 @@ def login_required(view):
                 401,
             )
 
+        current_user_profile = get_user_profile(current_user)
+
+        if current_user_profile.status == "INACTIVE":
+            # session.clear()
+            return (
+                jsonify(
+                    {
+                        "error": "Forbidden.",
+                        "message": "Account is inactive. Contact Administrator.",
+                    }
+                ),
+                403,
+            )
+
         g.current_user = current_user
+        g.current_user_profile = current_user_profile
 
         return view(*args, **kwargs)
 

@@ -7,6 +7,7 @@ from backend.app.schemas.user_schema import StudentProfile
 class EnrolmentEnum(str, Enum):
     PENDING = "PENDING"
     CONFIRMED = "CONFIRMED"
+    CANCELLED = "CANCELLED"
 
 
 class AdminAllEnrolments(BaseModel):

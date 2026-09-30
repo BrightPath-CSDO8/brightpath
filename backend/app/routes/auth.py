@@ -11,17 +11,21 @@ from backend.app.schemas.user_schema import (
     LoginTeacherResponse,
     LoginAdminResponse,
 )
-from backend.app.schemas.auth_schema import LoginRequest
+from backend.app.schemas.auth_schema import LoginRequest, ChangePassword
 from backend.app.schemas.user_schema import User
 
 # Service
-from backend.app.services.auth_service import svc_login, svc_me
+from backend.app.services.auth_service import svc_login, svc_me, svc_change_password
 
 # Exceptions
-from backend.app.exceptions.auth import AuthenticationError
+from backend.app.exceptions.auth import (
+    AuthenticationError,
+    ForbiddenError,
+    ValidationError as AppValidationError,
+)
 
 # Utils
-from backend.app.utils.auth import login_required, role_required
+from backend.app.utils.auth import login_required, role_required, get_current_user
 
 auth_bp = Blueprint("auth", __name__, url_prefix="/api/v1")
 
@@ -93,12 +97,6 @@ def auth_me():
             admin=user_profile,
         )
 
-    # elif user.role == "SUPERADMIN":
-    #     response = LoginSuperAdminResponse(
-    #         user=user,
-    #         superadmin=user_profile,
-    #     )
-
     else:
         session.clear()
 
@@ -158,7 +156,16 @@ def login():
             ),
             401,
         )
-
+    except ForbiddenError as e:
+        return (
+            jsonify(
+                {
+                    "error": "Forbidden.",
+                    "message": str(e),
+                }
+            ),
+            403,
+        )
     session["user_id"] = user.user_id
     session["role"] = user.role
 
@@ -177,3 +184,59 @@ def logout():
     session.clear()
 
     return jsonify({"message": "Logout successfully"}), 200
+
+
+@auth_bp.route("/auth/change-password", methods=["PATCH"])
+@login_required
+def change_password():
+    response = request.get_json(silent=True)
+    current_user = get_current_user()
+    if not response:
+        return (
+            jsonify({"error": "Bad request.", "message": "Request body is required"}),
+            400,
+        )
+    try:
+        password_obj = ChangePassword.model_validate(response)
+        svc_change_password(current_user.user_id, password_obj)
+    except ValidationError as e:
+        details = {}
+
+        for error in e.errors():
+            field = error["loc"][0] if error["loc"] else "request"
+            details[field] = error["msg"]
+
+        return (
+            jsonify(
+                {
+                    "error": "Bad request.",
+                    "message": "Invalid request body.",
+                    "details": details,
+                }
+            ),
+            400,
+        )
+    except AppValidationError as e:
+        return (
+            jsonify(
+                {
+                    "error": "Bad request.",
+                    "message": str(e),
+                }
+            ),
+            400,
+        )
+    except AuthenticationError as e:
+        return (
+            jsonify(
+                {
+                    "error": "Unauthorized.",
+                    "message": str(e),
+                }
+            ),
+            401,
+        )
+    return (
+        jsonify({"message": "Password changed successfully."}),
+        200,
+    )

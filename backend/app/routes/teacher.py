@@ -54,7 +54,7 @@ def all_teachers():
     return jsonify([teacher.model_dump(mode="json") for teacher in response]), 200
 
 
-# Register teacher (Admin/SuperAdmin AUTH route)
+# Register teacher (Admin AUTH route)
 @teacher_bp.route("/auth/staff/register", methods=["POST"])
 @login_required
 @role_required("ADMIN")
