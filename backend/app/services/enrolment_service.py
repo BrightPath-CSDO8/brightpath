@@ -55,6 +55,18 @@ def svc_create_enrolment(
     enrolment_found = db.session.scalar(enrolment_stmt)
 
     if enrolment_found:
+        # Allow reapplication if previous enrolment was cancelled.
+        if enrolment_found.status == "CANCELLED":
+            enrolment_found.status = "PENDING"
+            enrolment_found.enrolment_date = date.today()
+
+            db.session.commit()
+
+            return EnrolmentCreateResponse(
+                enrolment_id_bus=enrolment_found.enrolment_id_bus,
+                status=enrolment_found.status,
+            )
+
         raise DuplicateError("Student has already registered for course.")
 
     new_enrolment = Enrolment(
@@ -155,8 +167,15 @@ def svc_admin_update_enrolment(
     if not enrolment:
         raise NotFoundError("Enrolment is not registered.")
 
-    enrolment.status = data.status.value
+    if enrolment.status == "CONFIRMED" and data.status.value == "CANCELLED":
+        raise ForbiddenError("Confirmed enrolments cannot be cancelled.")
 
+    if enrolment.status == "CANCELLED" and data.status.value == "CONFIRMED":
+        raise ForbiddenError(
+            "Cancelled enrolments cannot be changed to a Confirmed status."
+        )
+
+    enrolment.status = data.status.value
     db.session.commit()
 
     return enrolment
