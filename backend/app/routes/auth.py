@@ -18,7 +18,7 @@ from backend.app.schemas.user_schema import User
 from backend.app.services.auth_service import svc_login, svc_me
 
 # Exceptions
-from backend.app.exceptions.auth import AuthenticationError
+from backend.app.exceptions.auth import AuthenticationError, ForbiddenError
 
 # Utils
 from backend.app.utils.auth import login_required, role_required
@@ -158,7 +158,16 @@ def login():
             ),
             401,
         )
-
+    except ForbiddenError as e:
+        return (
+            jsonify(
+                {
+                    "error": "Forbidden.",
+                    "message": str(e),
+                }
+            ),
+            403,
+        )
     session["user_id"] = user.user_id
     session["role"] = user.role
 

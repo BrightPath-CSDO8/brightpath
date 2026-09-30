@@ -5,7 +5,7 @@ from database.models import Users, Student, Teacher, Admin
 from backend.app.utils.password import verify_hash_password
 
 # Exceptions
-from backend.app.exceptions.auth import AuthenticationError
+from backend.app.exceptions.auth import AuthenticationError, ForbiddenError
 
 
 def get_user_profile(user):
@@ -15,17 +15,26 @@ def get_user_profile(user):
         if not user_profile:
             raise AuthenticationError("Student profile not found.")
 
+        if user_profile.status == "INACTIVE":
+            raise ForbiddenError("Account inactive. Contact Administrator.")
+
     elif user.role == "TEACHER":
         user_profile = Teacher.query.filter_by(user_id=user.user_id).first()
         if not user_profile:
             raise AuthenticationError("Teacher profile not found.")
+        if user_profile.status == "INACTIVE":
+            raise ForbiddenError("Account inactive. Contact Administrator.")
 
     elif user.role == "ADMIN":
         user_profile = Admin.query.filter_by(user_id=user.user_id).first()
         if not user_profile:
             raise AuthenticationError("Admin profile not found.")
+        if user_profile.status == "INACTIVE":
+            raise ForbiddenError("Account inactive. Contact Administrator.")
+
     else:
         raise AuthenticationError("Invalid user role.")
+
     return user_profile
 
 
@@ -39,7 +48,6 @@ def svc_login(data):
 
     if not verified_password:
         raise AuthenticationError("Invalid email and/or password.")
-
     user_profile = get_user_profile(user)
 
     return user, user_profile
