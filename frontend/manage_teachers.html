@@ -2,14 +2,20 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Manage Teachers — Education Management Platform</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="icon" type="image/png" href="assets/logo.png">
+  <title>Manage Teachers — BrightPath</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <style>@media (max-width: 576px) { .table-responsive > .table { min-width: 720px; } }</style>
 </head>
 <body>
   <nav class="navbar navbar-light bg-light border-bottom px-3">
-    <span class="navbar-brand mb-0 h1">Education Management Platform</span>
+    <a class="navbar-brand mb-0 d-flex align-items-center text-decoration-none" href="admin_dashboard.html">
+      <img src="assets/logo.png" alt="" height="34" class="me-2">
+      <span class="fw-semibold">BrightPath</span>
+    </a>
     <span class="text-muted">
-      <span id="adminName">Loading...</span> (Administrator) &nbsp;|&nbsp; <a href="#" id="logoutLink">Logout</a>
+      <span id="adminName">Loading...</span> (Administrator) &nbsp;|&nbsp; <a href="view_admin.html?admin=me">My Profile</a> &nbsp;|&nbsp; <a href="#" id="logoutLink">Logout</a>
     </span>
   </nav>
 
@@ -28,7 +34,7 @@
     <div id="formAlert" class="alert alert-danger" style="display: none;"></div>
     <div id="successAlert" class="alert alert-success" style="display: none;"></div>
 
-    <table class="table table-bordered align-middle" id="teacherTable">
+    <div class="table-responsive"><table class="table table-bordered align-middle" id="teacherTable">
       <thead class="table-light">
         <tr>
           <th>Name</th>
@@ -41,7 +47,7 @@
       <tbody id="teacherBody">
         <tr><td colspan="5" class="text-muted">Loading...</td></tr>
       </tbody>
-    </table>
+    </table></div>
 
     <div class="d-flex gap-2 mb-4">
       <a href="create_teacher.html" class="btn btn-primary">Create account</a>

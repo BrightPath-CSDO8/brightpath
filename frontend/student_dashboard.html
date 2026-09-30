@@ -2,12 +2,18 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Student Dashboard — Education Management Platform</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="icon" type="image/png" href="assets/logo.png">
+  <title>Student Dashboard — BrightPath</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <style>@media (max-width: 576px) { .table-responsive > .table { min-width: 720px; } }</style>
 </head>
 <body>
   <nav class="navbar navbar-light bg-light border-bottom px-3">
-    <span class="navbar-brand mb-0 h1">Education Management Platform</span>
+    <a class="navbar-brand mb-0 d-flex align-items-center text-decoration-none" href="student_dashboard.html">
+      <img src="assets/logo.png" alt="" height="34" class="me-2">
+      <span class="fw-semibold">BrightPath</span>
+    </a>
     <span class="text-muted">
       <span id="studentName">Loading...</span> (Student) &nbsp;|&nbsp; <a href="student_profile.html">My Profile</a> &nbsp;|&nbsp; <a href="#" id="logoutLink">Logout</a>
     </span>
@@ -17,7 +23,7 @@
 
     <div class="card mb-4">
       <div class="card-header">My courses &amp; schedule</div>
-      <table class="table mb-0" style="table-layout: fixed; width: 100%;">
+      <div class="table-responsive"><table class="table mb-0" style="table-layout: fixed; width: 100%;">
         <thead><tr>
           <th style="width: 22%;">Course</th>
           <th style="width: 18%;">Teacher</th>
@@ -28,12 +34,12 @@
         <tbody id="coursesBody">
           <tr><td colspan="5" class="text-muted">Loading...</td></tr>
         </tbody>
-      </table>
+      </table></div>
     </div>
 
     <div class="card mb-4">
       <div class="card-header">Grades and feedback</div>
-      <table class="table mb-0" style="table-layout: fixed; width: 100%;">
+      <div class="table-responsive"><table class="table mb-0" style="table-layout: fixed; width: 100%;">
         <thead><tr>
           <th style="width: 22%;">Course</th>
           <th style="width: 20%;">Assessment</th>
@@ -44,12 +50,12 @@
         <tbody id="gradesBody">
           <tr><td colspan="5" class="text-muted">Loading...</td></tr>
         </tbody>
-      </table>
+      </table></div>
     </div>
 
     <div class="card mb-4">
       <div class="card-header">My attendance</div>
-      <table class="table mb-0" style="table-layout: fixed; width: 100%;">
+      <div class="table-responsive"><table class="table mb-0" style="table-layout: fixed; width: 100%;">
         <thead><tr>
           <th style="width: 25%;">Date</th>
           <th style="width: 25%;">Course</th>
@@ -59,7 +65,7 @@
         <tbody id="attendanceBody">
           <tr><td colspan="4" class="text-muted">Loading...</td></tr>
         </tbody>
-      </table>
+      </table></div>
     </div>
 
     <a href="browse_courses.html" class="btn btn-primary">Enrol in a course</a>
@@ -132,7 +138,7 @@
             <td>${esc(teacherName)}</td>
             <td>${esc(roomName)}</td>
             <td>${esc(course.schedule)}</td>
-            <td><span class="badge bg-secondary">${esc(enrolment.status)}</span></td>
+            <td><span class="badge ${{ CONFIRMED: 'bg-success', PENDING: 'bg-warning text-dark', CANCELLED: 'bg-danger' }[enrolment.status] || 'bg-secondary'}">${esc(enrolment.status)}</span></td>
           </tr>`;
         }).join('');
       } catch (err) {
