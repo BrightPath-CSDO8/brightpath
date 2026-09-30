@@ -5,7 +5,7 @@ from enum import Enum
 from pydantic import BaseModel, ConfigDict, Field, model_validator, field_validator
 
 
-class CourseStatus(str, Enum):
+class CourseStatusEnum(str, Enum):
     OPEN = "OPEN"
     CLOSED = "CLOSED"
     INACTIVE = "INACTIVE"
@@ -17,21 +17,23 @@ class CourseResponse(BaseModel):
 
     course_id_bus: str
     course_name: str
-    course_fee: Decimal
+    course_fee: float
     description: str
     schedule: str
     start_date: date
     end_date: date
     capacity: int
-    classroom: str | None
-    status: CourseStatus
+    # classroom: str | None
+    teacher_id_bus: str
+    classroom_id: int
+    status: CourseStatusEnum
 
-    @field_validator("classroom", mode="before")
-    @classmethod
-    def get_classroom_name(cls, value):
-        if value is None:
-            return None
-        return value.room_name
+    # @field_validator("classroom", mode="before")
+    # @classmethod
+    # def get_classroom_name(cls, value):
+    #     if value is None:
+    #         return None
+    #     return value.room_name
 
 
 class CourseCreate(BaseModel):
@@ -43,7 +45,14 @@ class CourseCreate(BaseModel):
     start_date: date
     end_date: date
     capacity: int
-    classroom_id: int | None = None
+    classroom_id: int
+    teacher_id_bus: str
+
+    @model_validator(mode="after")
+    def check_capacity(self):
+        if self.capacity <= 0:
+            raise ValueError("Class size must be greater than 0.")
+        return self
 
     @model_validator(mode="after")
     def check_course_date(self):
@@ -66,4 +75,21 @@ class CoursePatchRequest(BaseModel):
     end_date: date | None = None
     capacity: int | None = None
     classroom_id: int | None = None
-    status: CourseStatus | None = None
+    status: CourseStatusEnum | None = None
+    teacher_id_bus: str | None = None
+
+    @model_validator(mode="after")
+    def check_capacity(self):
+        if self.capacity is not None and self.capacity <= 0:
+            raise ValueError("Class size must be greater than 0.")
+        return self
+
+    @model_validator(mode="after")
+    def check_course_date(self):
+        if (
+            self.start_date is not None
+            and self.end_date is not None
+            and self.start_date >= self.end_date
+        ):
+            raise ValueError("End date must be after start date.")
+        return self
