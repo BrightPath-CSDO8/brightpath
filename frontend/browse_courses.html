@@ -25,7 +25,7 @@
 
   <div class="container mb-4">
     <h4 class="mb-3">Browse Courses</h4>
-    <p class="text-muted small mb-3">Courses you're already enrolled in (or have a pending enrolment for) aren't shown here. Select a course, then enrol.</p>
+    <p class="text-muted small mb-3">Courses you're already enrolled in (or have a pending enrolment for) aren't shown here. Click a course name to read its description. Select a course, then enrol.</p>
 
     <div id="formAlert" class="alert alert-danger" style="display: none;"></div>
     <div id="successAlert" class="alert alert-success" style="display: none;"></div>
@@ -93,6 +93,13 @@
       document.getElementById('successAlert').style.display = 'none';
     }
 
+    function toggleDetails(event, link) {
+      event.preventDefault();
+      const row = document.querySelector(`tr[data-details="${CSS.escape(link.getAttribute('data-course'))}"]`);
+      const open = row.classList.toggle('d-none') === false;
+      link.setAttribute('aria-expanded', open ? 'true' : 'false');
+    }
+
     function getSelected() {
       const checked = document.querySelector('input[name="courseSelect"]:checked');
       return checked ? checked.value : null;
@@ -138,13 +145,20 @@
           const teacherName = teacher ? `${teacher.salutation} ${teacher.last_name}` : '—';
           return `<tr>
             <td><input type="radio" name="courseSelect" value="${esc(c.course_id_bus)}"></td>
-            <td>${esc(c.course_name)}</td>
+            <td><a href="#" class="fw-medium" aria-expanded="false" data-course="${esc(c.course_id_bus)}" onclick="toggleDetails(event, this)">${esc(c.course_name)}</a></td>
             <td>${esc(teacherName)}</td>
             <td>${esc(c.schedule)}</td>
             <td>${formatDate(c.start_date)}</td>
             <td>${formatDate(c.end_date)}</td>
             <td>${esc(c.capacity)}</td>
             <td>${formatFee(c.course_fee)}</td>
+          </tr>
+          <tr class="d-none" data-details="${esc(c.course_id_bus)}">
+            <td></td>
+            <td colspan="7" class="bg-light">
+              <div class="small text-muted mb-1">About this course</div>
+              <div style="white-space: pre-line;">${esc(c.description) || '<span class="text-muted">No description provided.</span>'}</div>
+            </td>
           </tr>`;
         }).join('');
       } catch (err) {
