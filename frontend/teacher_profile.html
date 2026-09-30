@@ -146,13 +146,13 @@
       saveBtn.textContent = 'Saving...';
 
       try {
-        // Backend requires salutation + status on every PATCH, even for a mobile-only edit —
-        // status is re-sent unchanged since it's not exposed as editable here.
+        // Only send what this page edits. Status is admin-only, so it is deliberately
+        // not sent (sending it could overwrite an admin's change made in the meantime).
         const response = await fetch(`${API_BASE}/api/v1/teacher/${encodeURIComponent(teacher.teacher_id_bus)}`, {
           method: 'PATCH',
           credentials: 'include',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ salutation, mobile, status: teacher.status }),
+          body: JSON.stringify({ salutation, mobile }),
         });
 
         const body = await response.json().catch(() => ({}));
