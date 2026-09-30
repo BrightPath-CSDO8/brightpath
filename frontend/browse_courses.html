@@ -105,9 +105,18 @@
 
     function toggleDetails(event, link) {
       event.preventDefault();
-      const row = document.querySelector(`tr[data-details="${CSS.escape(link.getAttribute('data-course'))}"]`);
-      const open = row.classList.toggle('d-none') === false;
-      link.setAttribute('aria-expanded', open ? 'true' : 'false');
+      const courseId = link.getAttribute('data-course');
+      const row = document.querySelector(`tr[data-details="${CSS.escape(courseId)}"]`);
+      const opening = row.classList.contains('d-none');
+
+      // Close every open description first, so only one is open at a time.
+      document.querySelectorAll('tr[data-details]').forEach(r => r.classList.add('d-none'));
+      document.querySelectorAll('a[data-course]').forEach(a => a.setAttribute('aria-expanded', 'false'));
+
+      if (opening) {
+        row.classList.remove('d-none');
+        link.setAttribute('aria-expanded', 'true');
+      }
     }
 
     async function loadCourses() {
