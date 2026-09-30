@@ -7,9 +7,9 @@
 </head>
 <body>
   <nav class="navbar navbar-light bg-light border-bottom px-3">
-    <span class="navbar-brand mb-0 h1">Education Management Platform</span>
+    <a class="navbar-brand mb-0 h1 text-decoration-none" href="admin_dashboard.html">Education Management Platform</a>
     <span class="text-muted">
-      <span id="navUser">Loading...</span> (Administrator) &nbsp;|&nbsp; <a href="#" id="logoutLink">Logout</a>
+      <span id="navUser">Loading...</span> (Administrator) &nbsp;|&nbsp; <a href="view_admin.html?admin=me">My Profile</a> &nbsp;|&nbsp; <a href="#" id="logoutLink">Logout</a>
     </span>
   </nav>
 
@@ -17,49 +17,108 @@
   <script src="navbar-identity.js"></script>
 
   <div class="container my-3">
-    <a href="reports.html">Back to Reports</a>
+    <a href="admin_dashboard.html">&larr; Main menu</a>
   </div>
 
-  <div class="container">
-    <h4 class="mb-3">Enrolment Summary</h4>
+  <div class="container mb-5">
+    <h4 class="mb-1">Enrolment Summary</h4>
+    <p class="text-muted small mb-3">Live from the database: confirmed enrolments vs. capacity for each course. "% filled" counts confirmed enrolments only.</p>
 
-    <!-- TODO (Week 8): computed live via COUNT grouped by course from the Enrolment table,
-         joined against Course.capacity — not separately stored anywhere -->
+    <div id="formAlert" class="alert alert-danger" style="display: none;"></div>
+
     <table class="table table-bordered align-middle" id="reportTable">
       <thead class="table-light">
         <tr>
           <th>Course name</th>
-          <th>Intake</th>
+          <th>Course status</th>
+          <th>Starts</th>
           <th>Capacity</th>
-          <th>Enrolled</th>
-          <th>% Filled</th>
+          <th>Confirmed</th>
+          <th>Pending</th>
+          <th>% filled</th>
         </tr>
       </thead>
-      <tbody></tbody>
+      <tbody id="reportBody">
+        <tr><td colspan="7" class="text-muted">Loading...</td></tr>
+      </tbody>
     </table>
+    <div id="totals" class="text-muted small"></div>
   </div>
 
   <script>
-    const courses = [
-      { name: 'Math 101', intake: '2026 Term 3', capacity: 30, enrolled: 28 },
-      { name: 'Math 201', intake: '2026 Term 3', capacity: 25, enrolled: 22 },
-      { name: 'English 101', intake: '2026 Term 3', capacity: 28, enrolled: 25 },
-      { name: 'Science 101', intake: '2026 Term 3', capacity: 20, enrolled: 18 },
-    ];
+    function esc(value) {
+      return String(value ?? '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+    }
 
-    const body = document.querySelector('#reportTable tbody');
-    courses.forEach(c => {
-      const pctFilled = Math.round((c.enrolled / c.capacity) * 100);
-      const tr = document.createElement('tr');
-      tr.innerHTML = `
-        <td>${c.name}</td>
-        <td>${c.intake}</td>
-        <td>${c.capacity}</td>
-        <td>${c.enrolled}</td>
-        <td>${pctFilled}%</td>
-      `;
-      body.appendChild(tr);
-    });
+    function formatDate(iso) {
+      if (!iso) return '—';
+      const d = new Date(iso + 'T00:00:00');
+      return d.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
+    }
+
+    async function apiGet(path) {
+      const response = await fetch(`${API_BASE}${path}`, { credentials: 'include' });
+      if (!response.ok) throw new Error(`${path} returned ${response.status}`);
+      return response.json();
+    }
+
+    async function loadReport() {
+      const body = document.getElementById('reportBody');
+      try {
+        const [courses, enrolments] = await Promise.all([
+          apiGet('/api/v1/auth/courses'),
+          apiGet('/api/v1/auth/enrolments'),
+        ]);
+
+        const confirmed = {};
+        const pending = {};
+        enrolments.forEach(e => {
+          if (e.status === 'CONFIRMED') confirmed[e.course_id_bus] = (confirmed[e.course_id_bus] || 0) + 1;
+          if (e.status === 'PENDING') pending[e.course_id_bus] = (pending[e.course_id_bus] || 0) + 1;
+        });
+
+        if (courses.length === 0) {
+          body.innerHTML = '<tr><td colspan="7" class="text-muted">No courses yet.</td></tr>';
+          return;
+        }
+
+        let totalCap = 0;
+        let totalConfirmed = 0;
+        body.innerHTML = courses.map(c => {
+          const conf = confirmed[c.course_id_bus] || 0;
+          const pend = pending[c.course_id_bus] || 0;
+          const pct = c.capacity ? Math.round((conf / c.capacity) * 100) : 0;
+          totalCap += c.capacity || 0;
+          totalConfirmed += conf;
+          return `<tr>
+            <td>${esc(c.course_name)}</td>
+            <td>${esc(c.status)}</td>
+            <td>${esc(formatDate(c.start_date))}</td>
+            <td>${esc(c.capacity)}</td>
+            <td>${conf}</td>
+            <td>${pend}</td>
+            <td>${pct}%</td>
+          </tr>`;
+        }).join('');
+
+        const overall = totalCap ? Math.round((totalConfirmed / totalCap) * 100) : 0;
+        document.getElementById('totals').textContent =
+          `${courses.length} courses · ${totalConfirmed} confirmed enrolments across ${totalCap} seats (${overall}% filled overall)`;
+      } catch (err) {
+        body.innerHTML = '';
+        const alertEl = document.getElementById('formAlert');
+        alertEl.textContent = 'Could not load the report. Please refresh.';
+        alertEl.style.display = '';
+        console.error('Failed to load report:', err);
+      }
+    }
+
+    loadReport();
   </script>
 </body>
 </html>
