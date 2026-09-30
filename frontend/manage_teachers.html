@@ -34,6 +34,11 @@
     <div id="formAlert" class="alert alert-danger" style="display: none;"></div>
     <div id="successAlert" class="alert alert-success" style="display: none;"></div>
 
+    <div class="mb-3" style="max-width: 380px;">
+      <input type="search" class="form-control" id="tableFilter" placeholder="Search teachers by name, ID, class or status" aria-label="Search the list" autocomplete="off">
+      <div class="form-text" id="filterInfo"></div>
+    </div>
+
     <div class="table-responsive"><table class="table table-bordered align-middle" id="teacherTable">
       <thead class="table-light">
         <tr>
@@ -231,6 +236,39 @@
     });
 
     init();
+  </script>
+  <script>
+    // Live search: hides table rows that don't contain the typed text.
+    (function () {
+      const input = document.getElementById('tableFilter');
+      const info = document.getElementById('filterInfo');
+      const tbody = document.getElementById('teacherBody');
+
+      function rowText(tr) {
+        // Dropdowns contribute only their selected value, not every option.
+        const selected = [...tr.querySelectorAll('select')].map(s => s.value).join(' ');
+        const clone = tr.cloneNode(true);
+        clone.querySelectorAll('select').forEach(s => s.remove());
+        return (clone.textContent + ' ' + selected).toLowerCase();
+      }
+
+      function applyFilter() {
+        const q = input.value.trim().toLowerCase();
+        // Rows with a colspan cell are messages (Loading..., No results), not data.
+        const rows = [...tbody.querySelectorAll('tr')].filter(tr => !tr.querySelector('td[colspan]'));
+        let shown = 0;
+        rows.forEach(tr => {
+          const match = !q || rowText(tr).includes(q);
+          tr.classList.toggle('d-none', !match);
+          if (match) shown++;
+        });
+        info.textContent = q ? `Showing ${shown} of ${rows.length}` : '';
+      }
+
+      input.addEventListener('input', applyFilter);
+      // Re-apply after the table is (re)loaded or the enrolment tabs change.
+      new MutationObserver(applyFilter).observe(tbody, { childList: true });
+    })();
   </script>
 </body>
 </html>
