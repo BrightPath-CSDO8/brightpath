@@ -25,15 +25,17 @@
 
   <div class="container mb-4">
     <h4 class="mb-3">Browse Courses</h4>
-    <p class="text-muted small mb-3">Courses you're already enrolled in (or have a pending enrolment for) aren't shown here. Click a course name to read its description. Select a course, then enrol.</p>
+    <p class="text-muted small mb-3">Courses you're already enrolled in (or have a pending enrolment for) aren't shown here. Click a course name to read its description and enrol.</p>
 
     <div id="formAlert" class="alert alert-danger" style="display: none;"></div>
     <div id="successAlert" class="alert alert-success" style="display: none;"></div>
+    <div id="paymentBox" class="card border-success mb-4" style="display: none;">
+      <div class="card-body" id="paymentBody"></div>
+    </div>
 
     <div class="table-responsive"><table class="table table-bordered align-middle" id="courseTable">
       <thead class="table-light">
         <tr>
-          <th style="width: 5%;">Select</th>
           <th>Course name</th>
           <th>Teacher</th>
           <th>Schedule</th>
@@ -44,11 +46,10 @@
         </tr>
       </thead>
       <tbody id="courseBody">
-        <tr><td colspan="8" class="text-muted">Loading...</td></tr>
+        <tr><td colspan="7" class="text-muted">Loading...</td></tr>
       </tbody>
     </table></div>
 
-    <button class="btn btn-primary" id="enrolBtn" onclick="enrolNow()">Enrol now</button>
   </div>
 
   <script src="config.js"></script>
@@ -99,6 +100,7 @@
     function hideAlerts() {
       document.getElementById('formAlert').style.display = 'none';
       document.getElementById('successAlert').style.display = 'none';
+      document.getElementById('paymentBox').style.display = 'none';
     }
 
     function toggleDetails(event, link) {
@@ -106,11 +108,6 @@
       const row = document.querySelector(`tr[data-details="${CSS.escape(link.getAttribute('data-course'))}"]`);
       const open = row.classList.toggle('d-none') === false;
       link.setAttribute('aria-expanded', open ? 'true' : 'false');
-    }
-
-    function getSelected() {
-      const checked = document.querySelector('input[name="courseSelect"]:checked');
-      return checked ? checked.value : null;
     }
 
     async function loadCourses() {
@@ -143,8 +140,7 @@
         courses = allCourses.filter(c => !enrolledCourseIds.has(c.course_id_bus));
 
         if (courses.length === 0) {
-          courseBody.innerHTML = '<tr><td colspan="8" class="text-muted">No open courses available to enrol in right now.</td></tr>';
-          document.getElementById('enrolBtn').disabled = true;
+          courseBody.innerHTML = '<tr><td colspan="7" class="text-muted">No open courses available to enrol in right now.</td></tr>';
           return;
         }
 
@@ -152,7 +148,6 @@
           const teacher = teacherMap[c.teacher_id_bus];
           const teacherName = teacher ? `${teacher.salutation} ${teacher.last_name}` : '—';
           return `<tr>
-            <td><input type="radio" name="courseSelect" value="${esc(c.course_id_bus)}"></td>
             <td><a href="#" class="fw-medium" aria-expanded="false" data-course="${esc(c.course_id_bus)}" onclick="toggleDetails(event, this)">${esc(c.course_name)}</a></td>
             <td>${esc(teacherName)}</td>
             <td>${esc(c.schedule)}</td>
@@ -162,35 +157,48 @@
             <td>${formatFee(c.course_fee)}</td>
           </tr>
           <tr class="d-none" data-details="${esc(c.course_id_bus)}">
-            <td></td>
             <td colspan="7" class="bg-light">
               <div class="small text-muted mb-1">About this course</div>
               <div style="white-space: pre-line;">${esc(c.description) || '<span class="text-muted">No description provided.</span>'}</div>
-              <a class="btn btn-outline-primary btn-sm mt-3" href="${esc(enquiryLink(c, student))}">Have questions? Contact us</a>
+              <div class="mt-3">
+                <button type="button" class="btn btn-primary btn-sm me-2" data-course="${esc(c.course_id_bus)}" onclick="enrolNow(this)">Enrol now</button>
+                <a class="btn btn-outline-primary btn-sm" href="${esc(enquiryLink(c, student))}">Have questions? Contact us</a>
+              </div>
             </td>
           </tr>`;
         }).join('');
       } catch (err) {
-        courseBody.innerHTML = '<tr><td colspan="8" class="text-danger">Could not load courses. Please refresh.</td></tr>';
+        courseBody.innerHTML = '<tr><td colspan="7" class="text-danger">Could not load courses. Please refresh.</td></tr>';
         console.error('Failed to load courses:', err);
       }
     }
 
-    async function enrolNow() {
+    const PAYNOW_DEMO_NUMBER = '8000 0000';
+
+    function showPaymentInstructions(course, enrolmentId) {
+      document.getElementById('paymentBody').innerHTML = `
+        <h5 class="card-title text-success mb-3">Enrolment request submitted</h5>
+        <p class="mb-2"><strong>${esc(course.course_name)}</strong> &mdash; status: PENDING until payment is received.</p>
+        <p class="mb-1">To complete your enrolment, pay <strong>${formatFee(course.course_fee)}</strong> by PayNow:</p>
+        <ul class="mb-2">
+          <li>PayNow (mobile): <strong>${esc(PAYNOW_DEMO_NUMBER)}</strong> <span class="badge bg-secondary">Demo only &ndash; not a real account</span></li>
+          <li>Reference: <strong>${esc(enrolmentId)}</strong></li>
+        </ul>
+        <p class="small text-muted mb-0">An administrator will confirm your enrolment once your payment has been received. You can check the status on your dashboard.</p>`;
+      document.getElementById('paymentBox').style.display = '';
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    async function enrolNow(enrolBtn) {
       hideAlerts();
-      const selected = getSelected();
-      if (!selected) {
-        showFormAlert('Please select a course first.');
-        return;
-      }
+      const selected = enrolBtn.getAttribute('data-course');
       const course = courses.find(c => c.course_id_bus === selected);
       const courseName = course ? course.course_name : selected;
 
-      if (!confirm(`Enrol in ${courseName}? This will be submitted as pending until confirmed by the platform.`)) {
+      if (!confirm(`Submit an enrolment request for ${courseName} (${course ? formatFee(course.course_fee) : ''})? You'll be shown payment instructions next, and an admin confirms once payment is received.`)) {
         return;
       }
 
-      const enrolBtn = document.getElementById('enrolBtn');
       enrolBtn.disabled = true;
       enrolBtn.textContent = 'Submitting...';
 
@@ -215,9 +223,7 @@
           return;
         }
 
-        const successAlert = document.getElementById('successAlert');
-        successAlert.textContent = `Enrolment request for ${courseName} submitted — status: ${body.status}.`;
-        successAlert.style.display = '';
+        showPaymentInstructions(course, body.enrolment_id_bus);
 
         await loadCourses();
       } catch (err) {
