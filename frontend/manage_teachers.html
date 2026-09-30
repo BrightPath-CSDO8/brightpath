@@ -119,11 +119,13 @@
             <td>${esc(t.mobile) || '—'}</td>
             <td>${classes.length ? classes.map(esc).join(', ') : '<span class="text-muted">None</span>'}</td>
             <td>
-              <div class="d-flex gap-1">
-                <select class="form-select form-select-sm" style="width: auto;" data-teacher="${esc(t.teacher_id_bus)}">
+              <div class="d-flex gap-1" data-row="${esc(t.teacher_id_bus)}">
+                <select class="form-select form-select-sm" style="width: auto;" data-teacher="${esc(t.teacher_id_bus)}" data-original="${esc(t.status)}" disabled>
                   ${statusOptions}
                 </select>
-                <button class="btn btn-sm btn-outline-primary" data-teacher="${esc(t.teacher_id_bus)}" onclick="updateStatus(this)">Save</button>
+                <button class="btn btn-sm btn-outline-primary" data-teacher="${esc(t.teacher_id_bus)}" data-action="edit" onclick="startEdit(this)">Edit</button>
+                <button class="btn btn-sm btn-primary d-none" data-teacher="${esc(t.teacher_id_bus)}" data-action="save" onclick="updateStatus(this)">Save</button>
+                <button class="btn btn-sm btn-outline-secondary d-none" data-teacher="${esc(t.teacher_id_bus)}" data-action="cancel" onclick="cancelEdit(this)">Cancel</button>
               </div>
             </td>
           </tr>`;
@@ -132,6 +134,25 @@
         teacherBody.innerHTML = '<tr><td colspan="5" class="text-danger">Could not load teachers. Please refresh.</td></tr>';
         console.error('Failed to load teachers:', err);
       }
+    }
+
+    function setEditing(row, editing) {
+      row.querySelector('select').disabled = !editing;
+      row.querySelector('[data-action="edit"]').classList.toggle('d-none', editing);
+      row.querySelector('[data-action="save"]').classList.toggle('d-none', !editing);
+      row.querySelector('[data-action="cancel"]').classList.toggle('d-none', !editing);
+    }
+
+    function startEdit(button) {
+      hideAlerts();
+      setEditing(button.closest('[data-row]'), true);
+    }
+
+    function cancelEdit(button) {
+      const row = button.closest('[data-row]');
+      const select = row.querySelector('select');
+      select.value = select.dataset.original;
+      setEditing(row, false);
     }
 
     async function updateStatus(button) {
@@ -169,6 +190,8 @@
         const successAlert = document.getElementById('successAlert');
         successAlert.textContent = `${teacher.first_name} ${teacher.last_name}'s status updated to ${newStatus}.`;
         successAlert.style.display = '';
+        select.dataset.original = newStatus;
+        setEditing(button.closest('[data-row]'), false);
       } catch (err) {
         showFormAlert('Network error — could not reach the server. Please try again.');
         console.error('Status update failed:', err);
