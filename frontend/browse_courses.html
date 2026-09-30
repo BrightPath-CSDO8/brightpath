@@ -41,10 +41,11 @@
           <th>Ends</th>
           <th>Capacity</th>
           <th>Fee</th>
+          <th>Contact us</th>
         </tr>
       </thead>
       <tbody id="courseBody">
-        <tr><td colspan="8" class="text-muted">Loading...</td></tr>
+        <tr><td colspan="9" class="text-muted">Loading...</td></tr>
       </tbody>
     </table></div>
 
@@ -54,6 +55,14 @@
   <script src="config.js"></script>
   <script>
     let courses = [];
+    const CONTACT_EMAIL = 'henryylim01@gmail.com';
+
+    function enquiryLink(course, student) {
+      const name = `${student.first_name || ''} ${student.last_name || ''}`.trim();
+      const subject = `Enquiry about ${course.course_name} (${course.course_id_bus})`;
+      const body = `Hi BrightPath team,\n\nI have a question about ${course.course_name} (${course.course_id_bus}).\n\n\n\nThanks,\n${name}`;
+      return `mailto:${CONTACT_EMAIL}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+    }
 
     function esc(value) {
       return String(value ?? '')
@@ -135,7 +144,7 @@
         courses = allCourses.filter(c => !enrolledCourseIds.has(c.course_id_bus));
 
         if (courses.length === 0) {
-          courseBody.innerHTML = '<tr><td colspan="8" class="text-muted">No open courses available to enrol in right now.</td></tr>';
+          courseBody.innerHTML = '<tr><td colspan="9" class="text-muted">No open courses available to enrol in right now.</td></tr>';
           document.getElementById('enrolBtn').disabled = true;
           return;
         }
@@ -152,17 +161,18 @@
             <td>${formatDate(c.end_date)}</td>
             <td>${esc(c.capacity)}</td>
             <td>${formatFee(c.course_fee)}</td>
+            <td><a href="${esc(enquiryLink(c, student))}">Ask a question</a></td>
           </tr>
           <tr class="d-none" data-details="${esc(c.course_id_bus)}">
             <td></td>
-            <td colspan="7" class="bg-light">
+            <td colspan="8" class="bg-light">
               <div class="small text-muted mb-1">About this course</div>
               <div style="white-space: pre-line;">${esc(c.description) || '<span class="text-muted">No description provided.</span>'}</div>
             </td>
           </tr>`;
         }).join('');
       } catch (err) {
-        courseBody.innerHTML = '<tr><td colspan="8" class="text-danger">Could not load courses. Please refresh.</td></tr>';
+        courseBody.innerHTML = '<tr><td colspan="9" class="text-danger">Could not load courses. Please refresh.</td></tr>';
         console.error('Failed to load courses:', err);
       }
     }
