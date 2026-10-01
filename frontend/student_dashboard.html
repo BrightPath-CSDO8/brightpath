@@ -23,23 +23,25 @@
 
   <div class="container my-4">
 
+    <div style="width: fit-content; min-width: 700px; max-width: 100%;">
     <div class="card mb-4">
       <div class="card-header d-flex justify-content-between align-items-center" role="button" tabindex="0" style="cursor: pointer;" data-section="sec-courses" aria-controls="sec-courses" aria-expanded="true">
         <span>My courses &amp; schedule <span class="text-muted small ms-1" id="count-courses"></span></span>
         <span class="section-chevron text-muted" aria-hidden="true">&#9662;</span>
       </div>
-      <div class="table-responsive" id="sec-courses"><table class="table mb-0" style="table-layout: fixed; width: 100%;">
+      <div class="table-responsive" id="sec-courses"><table class="table mb-0" style="width: auto;">
         <thead><tr>
-          <th style="width: 22%;">Course</th>
-          <th style="width: 18%;">Teacher</th>
-          <th style="width: 14%;">Room</th>
-          <th style="width: 26%;">Schedule</th>
-          <th style="width: 20%;">Status</th>
+          <th class="pe-5">Course</th>
+          <th class="pe-5">Teacher</th>
+          <th class="pe-5">Room</th>
+          <th class="pe-5">Schedule</th>
+          <th class="pe-4">Status</th>
         </tr></thead>
         <tbody id="coursesBody">
           <tr><td colspan="5" class="text-muted">Loading...</td></tr>
         </tbody>
       </table></div>
+    </div>
     </div>
 
     <div class="card mb-4">
@@ -61,22 +63,24 @@
       </table></div>
     </div>
 
+    <div style="width: fit-content; min-width: 700px; max-width: 100%;">
     <div class="card mb-4">
       <div class="card-header d-flex justify-content-between align-items-center" role="button" tabindex="0" style="cursor: pointer;" data-section="sec-attendance" aria-controls="sec-attendance" aria-expanded="false">
         <span>My attendance <span class="text-muted small ms-1" id="count-attendance"></span></span>
         <span class="section-chevron text-muted" aria-hidden="true">&#9656;</span>
       </div>
-      <div class="table-responsive d-none" id="sec-attendance"><table class="table mb-0" style="table-layout: fixed; width: 100%;">
+      <div class="table-responsive d-none" id="sec-attendance"><table class="table mb-0" style="width: auto;">
         <thead><tr>
-          <th style="width: 25%;">Date</th>
-          <th style="width: 25%;">Course</th>
-          <th style="width: 25%;">Status</th>
-          <th style="width: 25%;">Marked by</th>
+          <th class="pe-5">Date</th>
+          <th class="pe-5">Course</th>
+          <th class="pe-5">Status</th>
+          <th class="pe-4">Marked by</th>
         </tr></thead>
         <tbody id="attendanceBody">
           <tr><td colspan="4" class="text-muted">Loading...</td></tr>
         </tbody>
       </table></div>
+    </div>
     </div>
 
     <a href="browse_courses.html" class="btn btn-primary">Enrol in a course</a>
@@ -215,10 +219,10 @@
           const roomName = classroom ? classroom.room_name : '—';
 
           return `<tr>
-            <td>${esc(course.course_name)}</td>
-            <td>${esc(teacherName)}</td>
-            <td>${esc(roomName)}</td>
-            <td>${esc(course.schedule)}</td>
+            <td class="pe-5">${esc(course.course_name)}</td>
+            <td class="pe-5">${esc(teacherName)}</td>
+            <td class="pe-5">${esc(roomName)}</td>
+            <td class="pe-5">${esc(course.schedule)}</td>
             <td><span class="badge ${{ CONFIRMED: 'bg-success', PENDING: 'bg-warning text-dark', CANCELLED: 'bg-danger' }[enrolment.status] || 'bg-secondary'}">${esc(enrolment.status)}</span></td>
           </tr>`;
         }).join('');
@@ -287,9 +291,9 @@
           const badge = ATTENDANCE_BADGE[r.status] || 'bg-secondary';
           const markedBy = r.teacher ? `${r.teacher.first_name} ${r.teacher.last_name}` : '—';
           return `<tr>
-            <td>${formatDate(r.attendance_date)}</td>
-            <td>${esc(r.course_name)}</td>
-            <td><span class="badge ${badge}">${esc(r.status)}</span></td>
+            <td class="pe-5">${formatDate(r.attendance_date)}</td>
+            <td class="pe-5">${esc(r.course_name)}</td>
+            <td class="pe-5"><span class="badge ${badge}">${esc(r.status)}</span></td>
             <td>${esc(markedBy)}</td>
           </tr>`;
         }).join('');
