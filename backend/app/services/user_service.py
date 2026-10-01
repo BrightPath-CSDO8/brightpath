@@ -15,7 +15,9 @@ from backend.app.exceptions.auth import EmailAlreadyRegisteredError
 def svc_register_student(data):
 
     # pre-check for duplicated email
-    existing_student = Users.query.filter_by(email=data.email).first()
+    normalized_email = data.email.strip().lower()
+    stmt = db.select(Users).filter_by(email=normalized_email)
+    existing_student = db.session.scalars(stmt).first()
 
     if existing_student:
         raise EmailAlreadyRegisteredError("Email address is already registered.")
@@ -23,7 +25,7 @@ def svc_register_student(data):
     try:
         # Create User
         user = Users(
-            email=data.email,
+            email=normalized_email,
             password_hash=hash_password(data.password),
             role="STUDENT",
         )
@@ -70,7 +72,9 @@ def svc_update_student_profile(student_id_bus, update_data):
 def svc_register_teacher(data):
 
     # pre-check for duplicated email
-    existing_user = Users.query.filter_by(email=data.email).first()
+    normalized_email = data.email.strip().lower()
+    stmt = db.select(Users).filter_by(email=normalized_email)
+    existing_user = db.session.scalars(stmt).first()
 
     if existing_user:
         raise EmailAlreadyRegisteredError("Email address is already registered.")
@@ -78,7 +82,7 @@ def svc_register_teacher(data):
     try:
         # Create User
         user = Users(
-            email=data.email,
+            email=normalized_email,
             password_hash=hash_password(data.password),
             role="TEACHER",
         )
@@ -126,7 +130,9 @@ def svc_update_teacher(teacher_id_bus, update_data):
 def svc_register_admin(data):
 
     # pre-check for duplicated email
-    existing_user = Users.query.filter_by(email=data.email).first()
+    normalized_email = data.email.strip().lower()
+    stmt = db.select(Users).filter_by(email=normalized_email)
+    existing_user = db.session.scalars(stmt).first()
 
     if existing_user:
         raise EmailAlreadyRegisteredError("Email address is already registered.")
@@ -134,7 +140,7 @@ def svc_register_admin(data):
     try:
         # Create User
         user = Users(
-            email=data.email,
+            email=normalized_email,
             password_hash=hash_password(data.password),
             role="ADMIN",
         )

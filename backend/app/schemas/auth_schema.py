@@ -8,7 +8,7 @@ class LoginRequest(BaseModel):
 
 class ChangePassword(BaseModel):
     model_config = ConfigDict(extra="forbid")
-    current_password: str
+    current_password: str = Field(min_length=5)
     new_password: str = Field(min_length=5)
     confirm_password: str = Field(min_length=5)
 
@@ -20,3 +20,9 @@ class ChangePassword(BaseModel):
         if len(value) < 5:
             raise ValueError("Password must be at least 5 characters long.")
         return value
+
+
+class ChangeEmail(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    current_password: str = Field(min_length=5)
+    new_email: EmailStr

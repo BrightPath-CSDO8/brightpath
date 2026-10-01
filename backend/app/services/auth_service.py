@@ -45,7 +45,9 @@ def get_user_profile(user):
 
 
 def svc_login(data):
-    user = Users.query.filter_by(email=data.email).first()
+    normalized_email = data.email.strip().lower()
+    stmt = db.select(Users).filter_by(email=normalized_email)
+    user = db.session.scalars(stmt).first()
 
     if not user:
         raise AuthenticationError("Invalid email and/or password.")
@@ -93,4 +95,27 @@ def svc_change_password(user_id, data):
 
     user.password_hash = hash_password(data.new_password)
 
+    db.session.commit()
+
+
+def svc_change_email(user_id, data):
+    user = db.session.scalar(db.select(Users).where(Users.user_id == user_id))
+
+    if not user:
+        raise AuthenticationError("User account not found.")
+
+    if not verify_hash_password(data.current_password, user.password_hash):
+        raise AppValidationError("Incorrect account password.")
+
+    new_email = data.new_email.strip().lower()
+    existing_email = db.session.scalar(
+        db.select(Users).where(
+            Users.email == new_email,
+            Users.user_id != user_id,
+        )
+    )
+    if existing_email:
+        raise AppValidationError("The requested email address cannot be used.")
+
+    user.email = new_email
     db.session.commit()

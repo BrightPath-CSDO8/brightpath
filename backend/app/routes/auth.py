@@ -11,11 +11,20 @@ from backend.app.schemas.user_schema import (
     LoginTeacherResponse,
     LoginAdminResponse,
 )
-from backend.app.schemas.auth_schema import LoginRequest, ChangePassword
+from backend.app.schemas.auth_schema import (
+    LoginRequest,
+    ChangePassword,
+    ChangeEmail,
+)
 from backend.app.schemas.user_schema import User
 
 # Service
-from backend.app.services.auth_service import svc_login, svc_me, svc_change_password
+from backend.app.services.auth_service import (
+    svc_login,
+    svc_me,
+    svc_change_password,
+    svc_change_email,
+)
 
 # Exceptions
 from backend.app.exceptions.auth import (
@@ -226,17 +235,53 @@ def change_password():
             ),
             400,
         )
-    except AuthenticationError as e:
+    return (
+        jsonify({"message": "Password changed successfully."}),
+        200,
+    )
+
+
+@auth_bp.route("/auth/change-email", methods=["PATCH"])
+@login_required
+def change_email():
+    response = request.get_json(silent=True)
+    current_user = get_current_user()
+    if not response:
+        return (
+            jsonify({"error": "Bad request.", "message": "Request body is required"}),
+            400,
+        )
+    try:
+        update_email = ChangeEmail.model_validate(response)
+        svc_change_email(current_user.user_id, update_email)
+    except ValidationError as e:
+        details = {}
+
+        for error in e.errors():
+            field = error["loc"][0] if error["loc"] else "request"
+            details[field] = error["msg"]
+
         return (
             jsonify(
                 {
-                    "error": "Unauthorized.",
+                    "error": "Bad request.",
+                    "message": "Invalid request body.",
+                    "details": details,
+                }
+            ),
+            400,
+        )
+    except AppValidationError as e:
+        return (
+            jsonify(
+                {
+                    "error": "Bad request.",
                     "message": str(e),
                 }
             ),
-            401,
+            400,
         )
     return (
-        jsonify({"message": "Password changed successfully."}),
+        jsonify({"message": "Email updated successfully."}),
         200,
     )
