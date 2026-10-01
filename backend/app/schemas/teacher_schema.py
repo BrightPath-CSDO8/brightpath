@@ -27,6 +27,7 @@ class CourseStudents(BaseModel):
     student_id_bus: str
     first_name: str
     last_name: str
+    email: EmailStr
     mobile: str
     enrolment_id_bus: str
 

@@ -234,9 +234,6 @@ def update_teacher(teacher_id_bus):
     )
 
 
-# Password reset
-
-
 # Assigned Courses
 @teacher_bp.route("/teacher/courses", methods=["GET"])
 @login_required

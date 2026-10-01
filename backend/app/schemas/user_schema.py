@@ -16,7 +16,7 @@ class UserRole(str, Enum):
     TEACHER = "TEACHER"
 
 
-class AdminStatus(str, Enum):
+class AccountStatus(str, Enum):
     ACTIVE = "ACTIVE"
     INACTIVE = "INACTIVE"
 
@@ -96,7 +96,7 @@ class StudentProfile(BaseModel):
     student_id_bus: str
     first_name: str
     last_name: str
-    status: str
+    status: AccountStatus
     mobile: str | None = None
     dob: date | None = None
 
@@ -117,6 +117,7 @@ class StudentProfileRequest(BaseModel):
     # Disallow unknown fields from request
     model_config = ConfigDict(extra="forbid")
     mobile: str | None = Field(default=None, pattern=r"^[89]\d{7}$")
+    status: AccountStatus | None = None
 
 
 ###### TEACHER
@@ -129,7 +130,7 @@ class TeacherProfile(BaseModel):
     first_name: str
     last_name: str
     mobile: str
-    status: str
+    status: AccountStatus
 
 
 class TeacherCreate(BaseModel):
@@ -181,7 +182,7 @@ class TeacherProfileRequest(BaseModel):
     model_config = ConfigDict(from_attributes=True, extra="forbid")
     salutation: Salutation | None = None
     mobile: str | None = Field(default=None, pattern=r"^[89]\d{7}$")
-    status: AdminStatus | None = None
+    status: AccountStatus | None = None
 
     @model_validator(mode="after")
     def validate_patch_fields(self):
@@ -210,7 +211,7 @@ class AdminProfile(BaseModel):
     model_config = ConfigDict(from_attributes=True)
     first_name: str
     last_name: str
-    status: AdminStatus
+    status: AccountStatus
 
 
 class AdminCreate(BaseModel):

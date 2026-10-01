@@ -43,6 +43,11 @@ from backend.app.utils.auth import (
 student_bp = Blueprint("student", __name__, url_prefix="/api/v1")
 
 
+STUDENT_ALLOWED_FIELDS = {"mobile"}
+
+ADMIN_ALLOWED_FIELDS = {"mobile", "status"}
+
+
 @student_bp.route("/students", methods=["GET"])
 @login_required
 @role_required("ADMIN")
@@ -159,10 +164,13 @@ def get_one_student(student_id_bus):
 ## UPDATE STUDENT PROFLE
 @student_bp.route("/student/<string:student_id_bus>", methods=["PATCH"])
 @login_required
-@role_required("STUDENT")
+@role_required("STUDENT", "ADMIN")
 def update_student(student_id_bus):
     # Find target student
-    student = Student.query.filter_by(student_id_bus=student_id_bus).first()
+    student = db.session.scalar(
+        db.select(Student).where(Student.student_id_bus == student_id_bus)
+    )
+
     if student is None:
         return (
             jsonify(
@@ -197,6 +205,30 @@ def update_student(student_id_bus):
             400,
         )
 
+    current_user = get_current_user()
+
+    if current_user.role == "STUDENT":
+        allowed_fields = STUDENT_ALLOWED_FIELDS
+    elif current_user.role == "ADMIN":
+        allowed_fields = ADMIN_ALLOWED_FIELDS
+
+    else:
+        raise ForbiddenError("You are not authorized to update student profiles.")
+    unauthorized_fields = set(response) - allowed_fields
+
+    if unauthorized_fields:
+        return (
+            jsonify(
+                {
+                    "error": "Forbidden.",
+                    "message": (
+                        "One or more fields cannot be updated " "by your account."
+                    ),
+                }
+            ),
+            403,
+        )
+
     try:
         patch_request = StudentProfileRequest.model_validate(response)
 
@@ -221,7 +253,10 @@ def update_student(student_id_bus):
             ),
             400,
         )
-    update_data = patch_request.model_dump(exclude_unset=True)
+    update_data = patch_request.model_dump(
+        exclude_unset=True,
+        exclude_none=True,
+    )
 
     student = svc_update_student_profile(student_id_bus, update_data)
 
@@ -233,6 +268,7 @@ def update_student(student_id_bus):
                 "last_name": student.last_name,
                 "mobile": student.mobile,
                 "dob": student.dob.isoformat(),
+                "status": student.status,
             }
         ),
         200,

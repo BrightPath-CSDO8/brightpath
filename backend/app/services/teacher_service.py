@@ -84,8 +84,9 @@ def svc_teacher_students(user_id: str, course_id_bus: str) -> list[CourseStudent
 
     # Then obtain the students that are in that Course who are in "CONFIRMED" status
     students_enrolments_stmt = (
-        db.select(Student, Enrolment.enrolment_id_bus)
+        db.select(Student, Enrolment.enrolment_id_bus, Users.email)
         .join(Enrolment, Student.student_id == Enrolment.student_id)
+        .join(Users, Student.user_id == Users.user_id)
         .where(
             Enrolment.course_id == course_internal_id, Enrolment.status == "CONFIRMED"
         )
@@ -99,10 +100,11 @@ def svc_teacher_students(user_id: str, course_id_bus: str) -> list[CourseStudent
             student_id_bus=student.student_id_bus,
             first_name=student.first_name,
             last_name=student.last_name,
+            email=email,
             mobile=student.mobile,
             enrolment_id_bus=enrolment_id_bus,
         )
-        for student, enrolment_id_bus in confirmed_enrolments
+        for student, enrolment_id_bus, email in confirmed_enrolments
     ]
 
 
