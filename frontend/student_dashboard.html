@@ -44,23 +44,25 @@
     </div>
     </div>
 
+    <div style="width: fit-content; min-width: 700px; max-width: 100%;">
     <div class="card mb-4">
       <div class="card-header d-flex justify-content-between align-items-center" role="button" tabindex="0" style="cursor: pointer;" data-section="sec-grades" aria-controls="sec-grades" aria-expanded="false">
         <span>Grades and feedback <span class="text-muted small ms-1" id="count-grades"></span></span>
         <span class="section-chevron text-muted" aria-hidden="true">&#9656;</span>
       </div>
-      <div class="table-responsive d-none" id="sec-grades"><table class="table mb-0" style="table-layout: fixed; width: 100%;">
+      <div class="table-responsive d-none" id="sec-grades"><table class="table mb-0" style="width: auto;">
         <thead><tr>
-          <th style="width: 22%;">Course</th>
-          <th style="width: 20%;">Assessment</th>
-          <th style="width: 10%;">Score</th>
-          <th style="width: 33%;">Feedback</th>
-          <th style="width: 15%;">Date</th>
+          <th class="pe-5">Course</th>
+          <th class="pe-5">Assessment</th>
+          <th class="pe-5">Score</th>
+          <th class="pe-5">Feedback</th>
+          <th class="pe-4">Date</th>
         </tr></thead>
         <tbody id="gradesBody">
           <tr><td colspan="5" class="text-muted">Loading...</td></tr>
         </tbody>
       </table></div>
+    </div>
     </div>
 
     <div style="width: fit-content; min-width: 700px; max-width: 100%;">
@@ -264,10 +266,10 @@
         }
 
         gradesBody.innerHTML = grades.map(g => `<tr>
-          <td>${esc(g.course && g.course.course_name)}</td>
-          <td>${esc(g.assessment_name)}</td>
-          <td>${g.score === null || g.score === undefined ? '—' : esc(g.score)}</td>
-          <td>${esc(g.feedback) || '<span class="text-muted">—</span>'}</td>
+          <td class="pe-5">${esc(g.course && g.course.course_name)}</td>
+          <td class="pe-5">${esc(g.assessment_name)}</td>
+          <td class="pe-5">${g.score === null || g.score === undefined ? '—' : esc(g.score)}</td>
+          <td class="pe-5">${esc(g.feedback) || '<span class="text-muted">—</span>'}</td>
           <td>${formatDate(g.graded_date)}</td>
         </tr>`).join('');
       } catch (err) {
