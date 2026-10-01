@@ -151,7 +151,7 @@ def admin_update_student_enrolment(enrolment_id_bus):
             400,
         )
     try:
-        update_enrol_req = svc_admin_update_enrolment(
+        svc_admin_update_enrolment(
             enrolment_id_bus=enrolment_id_bus, data=patch_request
         )
     except NotFoundError as e:
@@ -163,5 +163,15 @@ def admin_update_student_enrolment(enrolment_id_bus):
                 }
             ),
             404,
+        )
+    except ForbiddenError as e:
+        return (
+            jsonify(
+                {
+                    "error": "Not Found.",
+                    "message": str(e),
+                }
+            ),
+            403,
         )
     return jsonify({"message": "Enrolment updated successfully"}), 200
