@@ -1,6 +1,6 @@
 from flask import Flask
-from extensions import db
-from database_connection import get_connection
+from backend.app.extensions import db
+from database.database_connection import get_connection
 
 
 app = Flask(__name__)
@@ -18,7 +18,7 @@ app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 db.init_app(app)
 
 with app.app_context():
-    import models
+    from database import models
     db.create_all()
 
 
